@@ -177,7 +177,7 @@
             }
             this.isAnimating = true;
             // Set the content background image and title
-            this.DOM.content.style.backgroundImage = this.DOM.items[this.pos].querySelector('.grid__item-inner').style.backgroundImage.replace(/center/g, 'resize');
+            this.DOM.content.style.backgroundImage = this.DOM.items[this.pos].querySelector('.grid__item-inner').style.backgroundImage.replace('center_resize', 'resize_crops');
             this.DOM.contentTitle.innerHTML = this.DOM.items[this.pos].dataset.medium;
             console.log( this.DOM.items[this.pos].dataset.medium);
             // Scales down and fades out the mouse toggle
