@@ -124,7 +124,7 @@
             // The grid will be initially translated so it is in the center
             this.gridTranslation = {x: 0, y: -1*this.extraHeight/2};
             // Linear interpolation easing percentage (for the grid movement on mouse move)
-            this.lerpFactor = 0.04;
+            this.lerpFactor = 0.1;
             this.initEvents();
             requestAnimationFrame(() => this.render());
         }
@@ -154,7 +154,10 @@
                 // The item's title.
                 const title = item.dataset.title;
                 // Show the title next to the cursor.
-                item.addEventListener('mouseenter', () => cursor.setTitle(title));
+                item.addEventListener('mouseenter', () => {
+                    cursor.setTitle(title);
+                    // document.getElementById(`name_${title}`).style.color='#fff';
+                });
                 item.addEventListener('click', () => {
                     // Position of the clicked item
                     this.pos = pos;
@@ -177,61 +180,18 @@
             }
             this.isAnimating = true;
             // Set the content background image and title
-            this.DOM.content.style.backgroundImage = this.DOM.items[this.pos].querySelector('.grid__item-inner').style.backgroundImage.replace(/center/g, 'resize');
+            this.DOM.content.style.backgroundImage = this.DOM.items[this.pos].querySelector('.grid__item-inner').style.backgroundImage.replace('center_resize', 'resize_crops');
             this.DOM.contentTitle.innerHTML = this.DOM.items[this.pos].dataset.medium;
             console.log( this.DOM.items[this.pos].dataset.medium);
             // Scales down and fades out the mouse toggle
             cursor.click();
             cursor.toggle();
-
-            // this.animation = anime({
-            //     targets: this.DOM.items,
-            //     opacity: [
-            //         {
-            //             value: 1, duration: 500
-            //         },
-            //         {
-            //             value: 0,
-            //             duration: 500,
-            //             easing: 'easeInQuad'
-            //         }
-            //     ],
-            //     translateY: [
-            //         {
-            //             value: 0, duration: 500
-            //         },
-            //         {
-            //             value: () => anime.random(100,400),
-            //             duration: 500,
-            //             easing: 'easeInQuad'
-            //         }
-            //     ],
-            //     rotate: [
-            //         {
-            //             value: target => target.dataset.rotateDir === 'l' ? anime.random(2,15) : anime.random(-0,-15),
-            //             duration: 500,
-            //             easing: 'easeInOutSine'
-            //         },
-            //         {
-            //             value: target => target.dataset.rotateDir === 'l' ? 8 : -8,
-            //             duration: 500,
-            //             easing: 'easeInQuad'
-            //         }
-            //     ],
-            //     delay: anime.stagger(350, {grid: this.gridDef, from: this.pos})
-            // });
-            // this.animation.play();
-            // this.animation.finished.then(() => {
-            //     // Pointer events class
-            //     this.DOM.el.classList.add('grid-wrap--hidden');
-            //     this.isAnimating = false;
-            // });
             this.animation = anime({
                 targets: this.DOM.items,
                 duration: 20,
                 easing: 'easeOutQuad',
                 opacity: 0,
-                delay: anime.stagger(0, {grid: this.gridDef, from: this.pos})
+                delay: anime.stagger(70, {grid: this.gridDef, from: this.pos})
             });
             this.animation.finished.then(() => {
                 // Pointer events class

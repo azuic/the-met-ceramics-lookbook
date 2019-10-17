@@ -18,7 +18,7 @@
 		</script>
 		<script src="js/imagesloaded.pkgd.min.js"></script>
 		<script src="js/anime.min.js"></script>
-
+		<script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@12.1.0/dist/lazyload.min.js"></script>
 		<script src="medium.js"></script>
 		<script src="objects.js"></script>
 	</head>
@@ -32,6 +32,7 @@
 							let mediumContainer = document.createElement('a');
 							mediumContainer.href=`#${ mediumData[m].medium}`;
 							mediumContainer.setAttribute('class','frame__demo');
+							mediumContainer.setAttribute('id',`name_${mediumData[m].medium}`);
 							mediumContainer.innerHTML=mediumData[m].medium;
 							document.getElementById("mediumSelection").appendChild(mediumContainer);
 						};
@@ -58,7 +59,7 @@
 								itemContainer.setAttribute('data-objId', mediumData[j].objectIDs[i]);
 								let item = document.createElement('div');
 								item.setAttribute('class', 'grid__item-inner');
-								item.style.cssText = `background-image:url(https://storage.googleapis.com/ceramics/center_crops/${mediumData[j].objectIDs[i]}.png)`;
+								item.style.cssText = `background-image:url(https://storage.googleapis.com/ceramics/center_resize/${mediumData[j].objectIDs[i]}.png)`;
 								itemContainer.appendChild(item);
 								document.getElementById('gridContainer').appendChild(itemContainer);
 							}
@@ -70,7 +71,7 @@
 		</main>
 		<div class="cursor">
 			<div class="cursor__inner cursor__inner--circle"></div>
-			<span class="cursor__inner cursor__inner--text">&nbsp;</span>
+			<span class="cursor__inner cursor__inner--text" style="display: none">&nbsp;</span>
 		</div>
 		<script src="index.js"></script>
 	</body>
