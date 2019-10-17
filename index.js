@@ -31,7 +31,8 @@
     // Track the mouse position
     let mousePos = {x: winsize.width/2, y: winsize.height/2};
     window.addEventListener('mousemove', ev => mousePos = getMousePos(ev));
-    
+
+
     // Custom mouse cursor.
     class CursorFx {
         constructor(el) {
@@ -98,8 +99,6 @@
 
     const cursor = new CursorFx(document.querySelector('.cursor'));
 
-
-
     class Grid {
         constructor(el) {
             this.DOM = {el: el};
@@ -123,6 +122,8 @@
             this.calculateSize();
             // The grid will be initially translated so it is in the center
             this.gridTranslation = {x: 0, y: -1*this.extraHeight/2};
+            this.target=0;
+            this.current=0;
             // Linear interpolation easing percentage (for the grid movement on mouse move)
             this.lerpFactor = 0.04;
             this.initEvents();
@@ -138,6 +139,17 @@
             // The animejs stagger function needs an array [cols,rows]
             this.gridDef = [this.columns, this.itemsTotal/this.columns];
         }
+        // updateScroll () {
+        //     this.target = window.scrollY || window.pageYOffset;
+        //     this.startAnimation();
+        // }
+        // setupAnimation () {
+        //
+        //     // Start the animation, if it is not running already
+        //     this.startAnimation();
+        // }
+
+
         initEvents() {
             // Window resize event 
             // The lerpFactor will change to 1 so theres no delay when translating the grid (or we would see the gaps on the top and bottom)
@@ -148,7 +160,22 @@
                 this.columns = this.itemsTotal/getComputedStyle(this.DOM.grid).getPropertyValue('--cell-number');
                 clearTimeout(this.resizeTimer);
                 this.resizeTimer = setTimeout(() => this.lerpFactor = 0.04, 250);
+                this.setupAnimation();
             });
+            window.addEventListener('scroll', ()=>{
+                this.target = window.scrollY || window.pageYOffset;
+                let diff=this.target -this.current;
+                let delta = Math.abs(diff) <0.1?0:diff*0.075;
+                if (delta){
+                    this.current +=delta;
+                    this.current = parseFloat(this.current.toFixed(2))
+                }else{
+                    this.current=this.target;
+                }
+            })
+
+            // this.setupAnimation();
+            // console.log(this.target);
 
             this.DOM.items.forEach((item, pos) => {
                 // The item's title.
@@ -165,10 +192,44 @@
                     cursor.setTitle(title);
                 });
             });
-            
+
+
             // Show back the grid.
             this.DOM.content.addEventListener('click', () => this.showGrid());
         }
+
+
+        // startAnimation () {
+        //     if (!this.rafActive) {
+        //         this.rafActive = true
+        //         this.rafId = requestAnimationFrame(this.updateAnimation)
+        //     }
+        // }
+        // Do calculations and apply CSS `transform`s accordingly
+        // updateAnimation () {
+        //     // Difference between `target` and `current` scroll position
+        //     var diff = this.target - this.current;
+        //     // `delta` is the value for adding to the `current` scroll position
+        //     // If `diff < 0.1`, make `delta = 0`, so the animation would not be endless
+        //     var delta = Math.abs(diff) < 0.1 ? 0 : diff * this.ease;
+        //
+        //     if (delta) { // If `delta !== 0`
+        //         // Update `current` scroll position
+        //         this.current += delta
+        //         // Round value for better performance
+        //         this.current = parseFloat(this.current.toFixed(2))
+        //         // Call `update` again, using `requestAnimationFrame`
+        //         this.rafId = requestAnimationFrame(this.updateAnimation)
+        //     } else { // If `delta === 0`
+        //         // Update `current`, and finish the animation loop
+        //         this.current = this.target
+        //         this.rafActive = false
+        //         cancelAnimationFrame(this.rafId)
+        //     }
+        //     this.DOM.grid.style.transform = `translateY(${-this.current}px)`;
+        //     // Set the CSS `transform` corresponding to the custom scroll effect
+        //     // setTransform(this.DOM.grid, 'translateY('+ -this.current +'px)')
+        // }
         // This is where the main grid effect takes place
         // Animates the boxes out and reveals the content "behind"
         showContent() {
@@ -182,50 +243,7 @@
             console.log( this.DOM.items[this.pos].dataset.medium);
             // Scales down and fades out the mouse toggle
             cursor.click();
-            cursor.toggle();
-
-            // this.animation = anime({
-            //     targets: this.DOM.items,
-            //     opacity: [
-            //         {
-            //             value: 1, duration: 500
-            //         },
-            //         {
-            //             value: 0,
-            //             duration: 500,
-            //             easing: 'easeInQuad'
-            //         }
-            //     ],
-            //     translateY: [
-            //         {
-            //             value: 0, duration: 500
-            //         },
-            //         {
-            //             value: () => anime.random(100,400),
-            //             duration: 500,
-            //             easing: 'easeInQuad'
-            //         }
-            //     ],
-            //     rotate: [
-            //         {
-            //             value: target => target.dataset.rotateDir === 'l' ? anime.random(2,15) : anime.random(-0,-15),
-            //             duration: 500,
-            //             easing: 'easeInOutSine'
-            //         },
-            //         {
-            //             value: target => target.dataset.rotateDir === 'l' ? 8 : -8,
-            //             duration: 500,
-            //             easing: 'easeInQuad'
-            //         }
-            //     ],
-            //     delay: anime.stagger(350, {grid: this.gridDef, from: this.pos})
-            // });
-            // this.animation.play();
-            // this.animation.finished.then(() => {
-            //     // Pointer events class
-            //     this.DOM.el.classList.add('grid-wrap--hidden');
-            //     this.isAnimating = false;
-            // });
+            cursor.toggle();;
             this.animation = anime({
                 targets: this.DOM.items,
                 duration: 20,
@@ -264,8 +282,11 @@
         // Translate the grid when moving the mouse
         render() {
             // The translation will be either 0 or -1*this.extraHeight depending on the position of the mouse on the y-axis
-            this.gridTranslation.y = MathUtils.lerp(this.gridTranslation.y, Math.min(Math.max(MathUtils.lineEq(-1*this.extraHeight, 0, this.height-this.height*.1, this.height*.1, mousePos.y), -1*this.extraHeight),0), this.lerpFactor);
-            this.DOM.grid.style.transform = `translateY(${this.gridTranslation.y}px)`; 
+         // if (mousePos.y<100 || mousePos.y>pageXOffset-100){
+         //    this.gridTranslation.y = MathUtils.lerp(this.gridTranslation.y, Math.min(Math.max(MathUtils.lineEq(-1 * this.extraHeight, 0, this.height - this.height * .1, this.height * .1, mousePos.y), -1 * this.extraHeight), 0), this.lerpFactor);
+            this.DOM.grid.style.transform = `translateY(-${this.current}px)`;
+         // }
+         //    setTransform(this.DOM.grid,)
             requestAnimationFrame(() => this.render());
         }
     }

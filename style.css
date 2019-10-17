@@ -224,11 +224,18 @@ a:focus {
 	-ms-user-select: none; 
 	user-select: none; 
 }
+::-webkit-scrollbar{
+	display: none;
+}
 
 .grid-wrap--hidden {
 	pointer-events: none;
 }
-
+.fake-scroll {
+	position: absolute;
+	top: 0;
+	width: 1px;
+}
 .grid {
 	display: grid;
 	width: 100%;
@@ -237,6 +244,7 @@ a:focus {
 	--cell-size: 5vw;
 	grid-template-columns: repeat(auto-fill, var(--cell-size));
 	will-change: transform;
+	/*position:fixed;*/
 }
 
 @media screen and (orientation: portrait) {
