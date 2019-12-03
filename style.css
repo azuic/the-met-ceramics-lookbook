@@ -22,6 +22,108 @@ body {
 	-moz-osx-font-smoothing: grayscale;
 }
 
+/* Common styles for all menus */
+.menu {
+	line-height: 1;
+	margin: 0 auto 3em;
+}
+
+.menu__list {
+	position: relative;
+	display: -webkit-flex;
+	display: flex;
+	-webkit-flex-wrap: wrap;
+	flex-wrap: wrap;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.menu__item {
+	display: block;
+	margin: 1em 0;
+}
+
+.menu__link {
+	font-size: 1.05em;
+	font-weight: bold;
+	display: block;
+	padding: 1em;
+	cursor: pointer;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	-webkit-touch-callout: none;
+	-khtml-user-select: none;
+	-webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+.menu__link:hover,
+.menu__link:focus {
+	outline: none;
+}
+
+/* Iris */
+.menu--iris .menu__item {
+	margin: 0 1em;
+}
+
+.menu--iris .menu__link {
+	position: relative;
+	text-align: center;
+	color: #b5b5b5;
+	-webkit-transition: color 0.3s;
+	transition: color 0.3s;
+}
+
+.menu--iris .menu__link:hover,
+.menu--iris .menu__link:focus {
+	color: #929292;
+}
+
+.menu--iris .menu__item--current .menu__link {
+	color: #d94f5c;
+}
+
+.menu--iris .menu__link::before,
+.menu--iris .menu__link::after {
+	content: '';
+	position: absolute;
+	width: 10px;
+	height: 10px;
+	opacity: 0;
+	border: 2px solid #d94f5c;
+	-webkit-transition: -webkit-transform 0.3s, opacity 0.3s;
+	transition: transform 0.3s, opacity 0.3s;
+	-webkit-transition-timing-function: cubic-bezier(0.17, 0.67, 0.05, 1.29);
+	transition-timing-function: cubic-bezier(0.17, 0.67, 0.05, 1.29);
+}
+
+.menu--iris .menu__link::before {
+	top: 0;
+	left: 0;
+	border-width: 2px 0 0 2px;
+	-webkit-transform: translate3d(10px, 10px, 0);
+	transform: translate3d(10px, 10px, 0);
+}
+
+.menu--iris .menu__link::after {
+	right: 0;
+	bottom: 0;
+	border-width: 0 2px 2px 0;
+	-webkit-transform: translate3d(-10px, -10px, 0);
+	transform: translate3d(-10px, -10px, 0);
+}
+
+.menu--iris .menu__item--current .menu__link::before,
+.menu--iris .menu__item--current .menu__link::after {
+	opacity: 1;
+	-webkit-transform: translate3d(0, 0, 0);
+	transform: translate3d(0, 0, 0);
+}
+
+
 .hidden {
 	pointer-events: none;
 	visibility: hidden;

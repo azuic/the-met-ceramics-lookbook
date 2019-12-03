@@ -180,9 +180,11 @@
             }
             this.isAnimating = true;
             // Set the content background image and title
-            this.DOM.content.style.backgroundImage = this.DOM.items[this.pos].querySelector('.grid__item-inner').style.backgroundImage.replace('center_resize', 'resize_crops');
+            this.DOM.content.style.backgroundImage = this.DOM.items[this.pos].querySelector('.grid__item-inner').style.backgroundImage.replace('resize-center', 'crops');
+            // this.DOM.content.style.backgroundImage = `url(https://storage.googleapis.com/ceramics/resize_crops/${this.DOM.items[this.pos].dataset.objId}.png)`
             this.DOM.contentTitle.innerHTML = this.DOM.items[this.pos].dataset.medium;
-            console.log( this.DOM.items[this.pos].dataset.medium);
+            // console.log( this.DOM.items[this.pos].dataset.medium);
+            // console.log( this.DOM.items[this.pos].dataset.medium);
             // Scales down and fades out the mouse toggle
             cursor.click();
             cursor.toggle();
@@ -235,4 +237,6 @@
 
     // Preload all the images in the page
     imagesLoaded(document.querySelectorAll('.grid__item-inner'), {background: true}, () => document.body.classList.remove('loading'));
+    // document.querySelectorAll('.grid__item-inner'), {background: true}, () => document.body.classList.remove('loading');
+
 }
