@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>The MET Ceramic Medium Look Book</title>
+		<link rel="stylesheet" type="text/css" href="style.css" />
+		<link href="https://fonts.googleapis.com/css?family=Work+Sans:400,600&display=swap" rel="stylesheet">
+		<script>
+			document.documentElement.className="js";
+			let supportsCssVars=function(){
+				let e,t=document.createElement("style");
+				return t.innerHTML="root: { --tmp-var: bold; }",
+						document.head.appendChild(t),
+						e=!!(window.CSS&&window.CSS.supports&&window.CSS.supports("font-weight","var(--tmp-var)")),
+						t.parentNode.removeChild(t),
+						e};
+			supportsCssVars()||alert("Please view this demo in a modern browser that supports CSS Variables.");
+		</script>
+		<script src="js/imagesloaded.pkgd.min.js"></script>
+
+		<script src="js/scrollMonitor.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@12.1.0/dist/lazyload.min.js"></script>
+		<script src="grouped_types.js"></script>
+		<script src="categorized_ceramics.js"></script>
+	</head>
+	<body class="lookbook loading">
+		<main id="mainContent">
+			<nav class="frame menu menu--iris">
+				<ul class="frame__demos menu__list" id="mediumSelection">
+					<script>
+						const mediumData = Object.keys(alltypes);
+						for (let m=0;m<mediumData.length;m++){
+							console.log(m);
+							let tabContainer = document.createElement('li');
+
+							tabContainer.setAttribute('class', "menu__item");
+
+
+							let mediumContainer = document.createElement('a');
+							mediumContainer.href=`#${ mediumData[m]}`;
+							mediumContainer.setAttribute('class','frame__demo menu__link');
+							mediumContainer.setAttribute('id',`name_${mediumData[m]}`);
+							mediumContainer.innerHTML=mediumData[m];
+							tabContainer.appendChild(mediumContainer)
+							document.getElementById("mediumSelection").appendChild(tabContainer);
+						};
+					</script>
+				</ul>
+
+			</nav>
+			<div class="content">
+				<h2 class="content__title">Loading...</h2>
+			</div>
+			<div class="grid-wrap" id="gridWrapper">
+				<div class="grid" id="gridContainer" medium="Ceramic">
+					<script>
+
+						for (let j=0;j<mediumData.length;j++) {
+
+							for (let i = 0; i < alltypes[mediumData[j]].length; i++) {
+								let itemContainer = document.createElement('div');
+								if (i === 0){
+									itemContainer.setAttribute('id', mediumData[j]);
+								}
+								itemContainer.setAttribute('class', 'grid__item');
+								itemContainer.setAttribute('data-title', mediumData[j]);
+								itemContainer.setAttribute('data-medium', objects[alltypes[mediumData[j]][i]].origin);
+								itemContainer.setAttribute('data-objId', alltypes[mediumData[j]][i]);
+								let item = document.createElement('div');
+								item.setAttribute('class', 'grid__item-inner');
+								// item.style.cssText = `background-image:url(resize-center/${alltypes[mediumData[j]][i]}.png)`
+								item.style.cssText = `background-image:url(https://d1tutlfztia4ba.cloudfront.net/resize-center/${alltypes[mediumData[j]][i]}.png)`;
+								// item.style.cssText = `background-image:url(${storage.child(`centers/${alltypes[mediumData[j]][i]}.png`).getDownloadURL()})`;
+								// item.style.cssText = `background-image:url(${getImage(mediumData[j].objectIDs[i])})`;
+
+								itemContainer.appendChild(item);
+								document.getElementById('gridContainer').appendChild(itemContainer);
+							}
+						}
+					</script>
+
+				</div>
+			</div>
+		</main>
+		<div class="cursor">
+			<div class="cursor__inner cursor__inner--circle"></div>
+			<span class="cursor__inner cursor__inner--text" style="display: none">&nbsp;</span>
+		</div>
+		<script src="index.js"></script>
+	</body>
+</html>
