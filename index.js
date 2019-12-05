@@ -1,7 +1,7 @@
 {
     const MathUtils = {
         lineEq: (y2, y1, x2, x1, currentVal) => {
-            // y = mx + b 
+            // y = mx + b
             var m = (y2 - y1) / (x2 - x1), b = y1 - m * x1;
             return m * currentVal + b;
         },
@@ -13,91 +13,91 @@
     const calcWinsize = () => winsize = {width: window.innerWidth, height: window.innerHeight};
     calcWinsize();
     window.addEventListener('resize', calcWinsize);
-
-    const getMousePos = (ev) => {
-        let posx = 0;
-        let posy = 0;
-        if (!ev) ev = window.event;
-        if (ev.pageX || ev.pageY) {
-            posx = ev.pageX;
-            posy = ev.pageY;
-        }
-        else if (ev.clientX || ev.clientY) 	{
-            posx = ev.clientX + body.scrollLeft + docEl.scrollLeft;
-            posy = ev.clientY + body.scrollTop + docEl.scrollTop;
-        }
-        return {x: posx, y: posy};
-    }
-    // Track the mouse position
-    let mousePos = {x: winsize.width/2, y: winsize.height/2};
-    window.addEventListener('mousemove', ev => mousePos = getMousePos(ev));
-    
-    // Custom mouse cursor.
-    class CursorFx {
-        constructor(el) {
-            this.DOM = {el: el};
-            this.DOM.toggle = this.DOM.el.querySelector('.cursor__inner--circle');
-            
-            this.DOM.title = this.DOM.el.querySelector('.cursor__inner--text');
-            this.bounds = {
-                toggle: this.DOM.toggle.getBoundingClientRect(),
-                title: this.DOM.title.getBoundingClientRect()
-            };
-            this.lastMousePos = {
-                toggle: {x: mousePos.x - this.bounds.toggle.width/2, y: mousePos.y - this.bounds.toggle.height/2},
-                title: {x: mousePos.x - this.bounds.title.width/2, y: mousePos.y - this.bounds.title.height/2}
-            };
-            this.lastScale = 1;
-            this.lastOpacity = 1;
-            requestAnimationFrame(() => this.render());
-        }
-        render() {
-            // Mouse movement distance on the x-axis
-            const diff = this.lastMousePos.toggle.x - (mousePos.x - this.bounds.toggle.width/2);
-            // Check if mouse is on the right side of the viewport
-            const rightSide = mousePos.x >= winsize.width/2;
-            // Switch the side of the title element
-            this.DOM.title.style.left = rightSide ? 'auto' : '30px';
-            this.DOM.title.style.right = rightSide ? '30px' : 'auto';
-            // The position of the title/toggle and the viewport side will determine the speed for both of these elements
-            const lerpFactor = {
-                toggle: rightSide ? diff < 0 ? 0.15 : 0.1 : diff < 0 ? 0.1 : 0.15,
-                title: rightSide ? diff < 0 ? 0.1 : 0.15 : diff < 0 ? 0.15 : 0.1
-            };
-            // Update the mouse position values given the previous calculated lerp value
-            this.lastMousePos.toggle.x = MathUtils.lerp(this.lastMousePos.toggle.x, mousePos.x - this.bounds.toggle.width/2, lerpFactor.toggle);
-            this.lastMousePos.toggle.y = MathUtils.lerp(this.lastMousePos.toggle.y, mousePos.y - this.bounds.toggle.height/2, lerpFactor.toggle);
-            this.lastMousePos.title.x = MathUtils.lerp(this.lastMousePos.title.x, mousePos.x - this.bounds.title.width/2, lerpFactor.title);
-            this.lastMousePos.title.y = MathUtils.lerp(this.lastMousePos.title.y, mousePos.y - this.bounds.title.height/2, lerpFactor.title);
-            // Also the scale and opacity values for the toggle
-            this.lastScale = MathUtils.lerp(this.lastScale, 1, 0.15);
-            this.lastOpacity = MathUtils.lerp(this.lastOpacity, 1, 0.1);
-            // Apply the styles
-            this.DOM.toggle.style.transform = `translateX(${(this.lastMousePos.toggle.x)}px) translateY(${this.lastMousePos.toggle.y}px) scale(${this.lastScale})`;
-            this.DOM.toggle.style.opacity = this.lastOpacity;
-            this.DOM.title.style.transform = `translateX(${(this.lastMousePos.title.x)}px) translateY(${this.lastMousePos.title.y}px)`;
-            
-            requestAnimationFrame(() => this.render());
-        }
-        setTitle(title) {
-            // Sets the title content
-            this.DOM.title.innerHTML = title;
-        }
-        click() {
-            // Scales down and fades out the mouse toggle
-            this.lastScale = .5;
-            this.lastOpacity = 0;
-        }
-        toggle() {
-            const isCircle = this.DOM.toggle.classList.contains('cursor__inner--circle');
-            this.DOM.toggle.classList[isCircle ? 'remove' : 'add']('cursor__inner--circle');
-            this.DOM.toggle.classList[isCircle ? 'add' : 'remove']('cursor__inner--cross');
-            this.DOM.title.style.opacity = isCircle ? 0 : 1;
-        }
-    }
-
-    const cursor = new CursorFx(document.querySelector('.cursor'));
-
+    //
+    // const getMousePos = (ev) => {
+    //     let posx = 0;
+    //     let posy = 0;
+    //     if (!ev) ev = window.event;
+    //     if (ev.pageX || ev.pageY) {
+    //         posx = ev.pageX;
+    //         posy = ev.pageY;
+    //     }
+    //     else if (ev.clientX || ev.clientY) 	{
+    //         posx = ev.clientX + body.scrollLeft + docEl.scrollLeft;
+    //         posy = ev.clientY + body.scrollTop + docEl.scrollTop;
+    //     }
+    //     return {x: posx, y: posy};
+    // }
+    // // Track the mouse position
+    // let mousePos = {x: winsize.width/2, y: winsize.height/2};
+    // window.addEventListener('mousemove', ev => mousePos = getMousePos(ev));
+    //
+    // // Custom mouse cursor.
+    // class CursorFx {
+    //     constructor(el) {
+    //         this.DOM = {el: el};
+    //         this.DOM.toggle = this.DOM.el.querySelector('.cursor__inner--circle');
+    //
+    //         this.DOM.title = this.DOM.el.querySelector('.cursor__inner--text');
+    //         this.bounds = {
+    //             toggle: this.DOM.toggle.getBoundingClientRect(),
+    //             title: this.DOM.title.getBoundingClientRect()
+    //         };
+    //         this.lastMousePos = {
+    //             toggle: {x: mousePos.x - this.bounds.toggle.width/2, y: mousePos.y - this.bounds.toggle.height/2},
+    //             title: {x: mousePos.x - this.bounds.title.width/2, y: mousePos.y - this.bounds.title.height/2}
+    //         };
+    //         this.lastScale = 1;
+    //         this.lastOpacity = 1;
+    //         requestAnimationFrame(() => this.render());
+    //     }
+    //     render() {
+    //         // Mouse movement distance on the x-axis
+    //         const diff = this.lastMousePos.toggle.x - (mousePos.x - this.bounds.toggle.width/2);
+    //         // Check if mouse is on the right side of the viewport
+    //         const rightSide = mousePos.x >= winsize.width/2;
+    //         // Switch the side of the title element
+    //         this.DOM.title.style.left = rightSide ? 'auto' : '30px';
+    //         this.DOM.title.style.right = rightSide ? '30px' : 'auto';
+    //         // The position of the title/toggle and the viewport side will determine the speed for both of these elements
+    //         const lerpFactor = {
+    //             toggle: rightSide ? diff < 0 ? 0.15 : 0.1 : diff < 0 ? 0.1 : 0.15,
+    //             title: rightSide ? diff < 0 ? 0.1 : 0.15 : diff < 0 ? 0.15 : 0.1
+    //         };
+    //         // Update the mouse position values given the previous calculated lerp value
+    //         this.lastMousePos.toggle.x = MathUtils.lerp(this.lastMousePos.toggle.x, mousePos.x - this.bounds.toggle.width/2, lerpFactor.toggle);
+    //         this.lastMousePos.toggle.y = MathUtils.lerp(this.lastMousePos.toggle.y, mousePos.y - this.bounds.toggle.height/2, lerpFactor.toggle);
+    //         this.lastMousePos.title.x = MathUtils.lerp(this.lastMousePos.title.x, mousePos.x - this.bounds.title.width/2, lerpFactor.title);
+    //         this.lastMousePos.title.y = MathUtils.lerp(this.lastMousePos.title.y, mousePos.y - this.bounds.title.height/2, lerpFactor.title);
+    //         // Also the scale and opacity values for the toggle
+    //         this.lastScale = MathUtils.lerp(this.lastScale, 1, 0.15);
+    //         this.lastOpacity = MathUtils.lerp(this.lastOpacity, 1, 0.1);
+    //         // Apply the styles
+    //         this.DOM.toggle.style.transform = `translateX(${(this.lastMousePos.toggle.x)}px) translateY(${this.lastMousePos.toggle.y}px) scale(${this.lastScale})`;
+    //         this.DOM.toggle.style.opacity = this.lastOpacity;
+    //         this.DOM.title.style.transform = `translateX(${(this.lastMousePos.title.x)}px) translateY(${this.lastMousePos.title.y}px)`;
+    //
+    //         requestAnimationFrame(() => this.render());
+    //     }
+    //     setTitle(title) {
+    //         // Sets the title content
+    //         this.DOM.title.innerHTML = title;
+    //     }
+    //     click() {
+    //         // Scales down and fades out the mouse toggle
+    //         this.lastScale = .5;
+    //         this.lastOpacity = 0;
+    //     }
+    //     toggle() {
+    //         const isCircle = this.DOM.toggle.classList.contains('cursor__inner--circle');
+    //         this.DOM.toggle.classList[isCircle ? 'remove' : 'add']('cursor__inner--circle');
+    //         this.DOM.toggle.classList[isCircle ? 'add' : 'remove']('cursor__inner--cross');
+    //         this.DOM.title.style.opacity = isCircle ? 0 : 1;
+    //     }
+    // }
+    //
+    // const cursor = new CursorFx(document.querySelector('.cursor'));
+    //
 
 
     class Grid {
@@ -115,11 +115,11 @@
             // totla number of grid items
             this.itemsTotal = this.DOM.items.length;
             // The content element ("behind" the grid)
-            this.DOM.content = document.querySelector('.content');
-            this.DOM.contentTitle = this.DOM.content.querySelector('.content__title');
+            // this.DOM.content = document.querySelector('.content');
+            // this.DOM.contentTitle = this.DOM.content.querySelector('.content__title');
             // Calculate heights of both the grid wrap and the grid, and also:
             // . the difference between them (then used for the grid/mousemove translation)
-            // . the number of rows/columns 
+            // . the number of rows/columns
             this.calculateSize();
             // The grid will be initially translated so it is in the center
             this.gridTranslation = {x: 0, y: -1*this.extraHeight/2};
@@ -139,7 +139,7 @@
             this.gridDef = [this.columns, this.itemsTotal/this.columns];
         }
         initEvents() {
-            // Window resize event 
+            // Window resize event
             // The lerpFactor will change to 1 so theres no delay when translating the grid (or we would see the gaps on the top and bottom)
             window.addEventListener('resize', () => {
                 this.lerpFactor = 1;
@@ -168,7 +168,7 @@
                     cursor.setTitle(title);
                 });
             });
-            
+
             // Show back the grid.
             this.DOM.content.addEventListener('click', () => this.showGrid());
         }
@@ -227,13 +227,13 @@
         render() {
             // The translation will be either 0 or -1*this.extraHeight depending on the position of the mouse on the y-axis
             this.gridTranslation.y = MathUtils.lerp(this.gridTranslation.y, Math.min(Math.max(MathUtils.lineEq(-1*this.extraHeight, 0, this.height-this.height*.1, this.height*.1, mousePos.y), -1*this.extraHeight),0), this.lerpFactor);
-            this.DOM.grid.style.transform = `translateY(${this.gridTranslation.y}px)`; 
+            this.DOM.grid.style.transform = `translateY(${this.gridTranslation.y}px)`;
             requestAnimationFrame(() => this.render());
         }
     }
 
     // Initialize the grid
-    new Grid(document.querySelector('.grid-wrap'));
+    new Grid(document.querySelector('main'));
 
     // Preload all the images in the page
     imagesLoaded(document.querySelectorAll('.grid__item-inner'), {background: true}, () => document.body.classList.remove('loading'));

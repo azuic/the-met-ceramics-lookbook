@@ -17,39 +17,13 @@
 						e};
 			supportsCssVars()||alert("Please view this demo in a modern browser that supports CSS Variables.");
 		</script>
-		<script src="js/imagesloaded.pkgd.min.js"></script>
-		<script src="js/anime.min.js"></script>
-<!--		<script src="js/scrollMonitor.js"></script>-->
-		<script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@12.1.0/dist/lazyload.min.js"></script>
 		<script src="grouped_types.js"></script>
 		<script src="categorized_ceramics.js"></script>
-		<!-- The core Firebase JS SDK is always required and must be listed first -->
-<!--		<script src="https://www.gstatic.com/firebasejs/7.3.0/firebase-app.js"></script>-->
-
-<!--		&lt;!&ndash; TODO: Add SDKs for Firebase products that you want to use-->
-<!--             https://firebase.google.com/docs/web/setup#available-libraries &ndash;&gt;-->
-<!--		<script src="https://www.gstatic.com/firebasejs/7.3.0/firebase-storage.js"></script>-->
-
-<!--		<script>-->
-<!--			// Your web app's Firebase configuration-->
-<!--			var firebaseConfig = {-->
-<!--				apiKey: "AIzaSyAySup9ijr_AMKpHmGbK7gmSnYzaAx5mAA",-->
-<!--				authDomain: "zui-c-fb698.firebaseapp.com",-->
-<!--				databaseURL: "https://zui-c-fb698.firebaseio.com",-->
-<!--				projectId: "zui-c-fb698",-->
-<!--				storageBucket: "zui-c-fb698.appspot.com",-->
-<!--				messagingSenderId: "300527746128",-->
-<!--				appId: "1:300527746128:web:c3560506ad64cb42eba555",-->
-<!--				measurementId: "G-WYYQXRYCVF"-->
-<!--			};-->
-<!--			// Initialize Firebase-->
-<!--			firebase.initializeApp(firebaseConfig);-->
-<!--			const storage=firebase.storage().ref();-->
-<!--		</script>-->
 	</head>
-	<body class="lookbook loading">
+	<body class="lookbook">
+		<script src="js/scrollMonitor.js"></script>
 		<main id="mainContent">
-			<nav class="frame menu menu--iris">
+			<nav class="frame menu menu--sebastian">
 				<ul class="frame__demos menu__list" id="mediumSelection">
 					<script>
 						const mediumData = Object.keys(alltypes);
@@ -58,11 +32,11 @@
 							let tabContainer = document.createElement('li');
 
 							tabContainer.setAttribute('class', "menu__item");
-
-
+							tabContainer.setAttribute('id',`tab_${mediumData[m]}`);
 							let mediumContainer = document.createElement('a');
 							mediumContainer.href=`#${ mediumData[m]}`;
-							mediumContainer.setAttribute('class','frame__demo menu__link');
+							mediumContainer.setAttribute('class','frame__demo');
+							mediumContainer.classList.add('menu__link');
 							mediumContainer.setAttribute('id',`name_${mediumData[m]}`);
 							mediumContainer.innerHTML=mediumData[m];
 							tabContainer.appendChild(mediumContainer)
@@ -72,54 +46,171 @@
 				</ul>
 
 			</nav>
-			<div class="content">
-				<h2 class="content__title">Loading...</h2>
+			<div class="content hidden">
+				<h2 class="content__title"></h2>
+				<span style="top:8em; right:5em; color:crimson; z-index: 102; position: absolute">[close]</span>
 			</div>
-			<div class="grid-wrap" id="gridWrapper">
-				<div class="grid" id="gridContainer" medium="Ceramic">
+			<!-- <div class="grid-wrap" id="gridWrapper"> -->
+				<div class="grid" id="gridContainer" medium="Ceramic"></div>
 					<script>
-						function getImage (objectID) {
-							// let { state } = this;
-							storage.child(`centers/${objectID}.png`).getDownloadURL().then((imageUrl) => {
-								// state[imageUrl] = url
-								return imageUrl;
-							}).catch((error) => {
-								// Handle any errors
-								return "";
-							})
-						}
+						let setImmediate = (function() {
+							let fnsQueue = [],
+								hasSI = !!(window.setImmediate || window.msSetImmediate),
+								hasPM = window.addEventListener && window.postMessage
+							if (!hasSI && hasPM)
+								window.addEventListener('message', function(e) {
+									if (e.data === "sleipnirImmediate")
+										if (fnsQueue.length)
+											fnsQueue.shift()() // take the first fn from the array and execute it
+								}, false)
+							return window.setImmediate || window.msSetImmediate ||
+								(function() {
+									if (hasPM)
+										return function(fn) {
+											fnsQueue.push(fn)
+										}
+									return function(fn) {
+										setTimeout(fn, 0)
+									}
+								}())
+						}());
 
-						for (let j=0;j<mediumData.length;j++) {
-
-							for (let i = 0; i < alltypes[mediumData[j]].length; i++) {
-								let itemContainer = document.createElement('div');
-								if (i === 0){
-									itemContainer.setAttribute('id', mediumData[j]);
-								}
-								itemContainer.setAttribute('class', 'grid__item');
-								itemContainer.setAttribute('data-title', mediumData[j]);
-								itemContainer.setAttribute('data-medium', objects[alltypes[mediumData[j]][i]].origin);
-								itemContainer.setAttribute('data-objId', alltypes[mediumData[j]][i]);
-								let item = document.createElement('div');
-								item.setAttribute('class', 'grid__item-inner');
-								// item.style.cssText = `background-image:url(resize-center/${alltypes[mediumData[j]][i]}.png)`
-								item.style.cssText = `background-image:url(https://d1tutlfztia4ba.cloudfront.net/resize-center/${alltypes[mediumData[j]][i]}.png)`;
-								// item.style.cssText = `background-image:url(${storage.child(`centers/${alltypes[mediumData[j]][i]}.png`).getDownloadURL()})`;
-								// item.style.cssText = `background-image:url(${getImage(mediumData[j].objectIDs[i])})`;
-
-								itemContainer.appendChild(item);
-								document.getElementById('gridContainer').appendChild(itemContainer);
+						function renderItem() {
+							if (this.isInViewport) {
+								this.watchItem.style.backgroundImage = `url(https://d1tutlfztia4ba.cloudfront.net/resize-center/${this.watchItem.getAttribute('data-objId')}.png`;
 							}
 						}
-					</script>
 
-				</div>
+						function makeWatcher(element) {
+							let watcher = scrollMonitor.create(element);
+							watcher.enterViewport(renderItem);
+							renderItem.call(watcher);
+							// if (element.getAttribute('data-isTop')==='true'){
+							// 	let topWatcher = scrollMonitor.create(element, {bottom:-1*element.innerHeight});
+							// 	topWatcher.stateChange(function(){
+							// 		if (!watcher.isInViewport){
+							//
+							// 		}
+							// 		if (topWatcher.isInViewport && topWatcher.isAboveViewport) {
+							// 			document.getElementById(`tab_${element.getAttribute('data-title')}`).classList.add('menu__item--current');
+							// 		} else if (topWatcher.isAboveViewport) {
+							// 			document.getElementById(`tab_${element.getAttribute('data-title')}`).classList.remove('menu__item--current');
+							// 		} else if ()
+							// 	})
+							// }
+							// if (element.getAttribute('data-isTop')==='true' || element.getAttribute('data-isBottom')==='true'){
+							// 	let typeWatcher = scrollMonitor.create(element)
+							// 	typeWatcher.stateChange(function () {
+							// 		if (element.getAttribute('data-isTop')==='true'){
+							//
+							// 		}
+							// 	})
+							// }
+							// watcher.stateChange(function () {
+							//
+							// })
+						}
+
+						let container = document.getElementById('gridContainer');
+
+						let frag = document.createDocumentFragment();
+
+						function addItems() {
+							let elements = Array.prototype.slice.apply(frag.childNodes);
+							container.appendChild(frag);
+							elements.forEach(makeWatcher);
+						}
+
+						let c=0;
+						function draw(){
+							for (let j=0;j<mediumData.length;j++) {
+
+								for (let i = 0; i < alltypes[mediumData[j]].length; i++) {
+									let itemContainer = document.createElement('div');
+									if (i === 0){
+										itemContainer.setAttribute('id',`top_${mediumData[j]}`);
+										itemContainer.setAttribute('data-isTop', 'true');
+									} else {
+										itemContainer.setAttribute('id',`end_${mediumData[j]}`);
+										itemContainer.setAttribute('data-isTop', 'false');
+									}
+									if (i===alltypes[mediumData[j]].length-1){
+										itemContainer.setAttribute('data-isBottom','true');
+									} else {
+										itemContainer.setAttribute('data-isBottom','false');
+									}
+									itemContainer.setAttribute('class', 'grid__item');
+									itemContainer.setAttribute('data-title', mediumData[j]);
+									itemContainer.setAttribute('data-medium', objects[alltypes[mediumData[j]][i]].origin);
+									itemContainer.setAttribute('data-objId', alltypes[mediumData[j]][i]);
+									itemContainer.setAttribute('data-surface', objects[alltypes[mediumData[j]][i]].surface);
+									let item = document.createElement('div');
+									item.setAttribute('class', 'grid__item-inner');
+									itemContainer.appendChild(item);
+									frag.appendChild(itemContainer);
+									itemContainer.addEventListener('mouseEnter', function () {
+										document.getElementById(`tab_${mediumData[j]}`).classList.add('menu__item--current');
+
+									})
+									itemContainer.addEventListener('click',function () {
+										document.querySelector('.content').style.backgroundImage = `url(https://d1tutlfztia4ba.cloudfront.net/crops/${alltypes[mediumData[j]][i]}.png`;
+										document.querySelector('.content__title').innerHTML = objects[alltypes[mediumData[j]][i]].origin;
+										document.querySelector('.content').classList.remove('hidden');
+										document.querySelector('.content').addEventListener('click',function () {
+											this.classList.add('hidden');
+										})
+									})
+									c+=1;
+								}
+
+
+							}
+							if (c===9530){
+								addItems();
+								setImmediate(function() {
+									scrollMonitor.recalculateLocations();
+								});
+							} else {
+								setImmediate(draw);
+							}
+
+						}
+						draw();
+						for (let j=0; j<mediumData.length; j++){
+							let currentType = document.getElementById(`tab_${mediumData[j]}`);
+							let firstItem = document.getElementById(`top_${mediumData[j]}`);
+							let lastItem = document.getElementById(`end_${mediumData[j]}`);
+							let typeWatcher = scrollMonitor.create(firstItem);
+							let typeEndWatcher = scrollMonitor.create(lastItem);
+							typeEndWatcher.stateChange(function(){
+								if (typeEndWatcher.isInViewport && typeWatcher.isAboveViewport){
+									currentType.classList.add('menu__item--current');
+								} else if (typeEndWatcher.isAboveViewport){
+									currentType.classList.remove('menu__item--current');
+								}
+							})
+						}
+					</script>
 			</div>
 		</main>
 		<div class="cursor">
-			<div class="cursor__inner cursor__inner--circle"></div>
-			<span class="cursor__inner cursor__inner--text" style="display: none">&nbsp;</span>
+			<div class="cursor__inner"></div>
 		</div>
-		<script src="index.js"></script>
+		<script>
+			let cursor = document.querySelector('.cursor');
+			document.addEventListener('mousemove', e => {
+				cursor.setAttribute("style", "top: "+(e.pageY - 10)+"px; left: "+(e.pageX - 10)+"px;")
+			})
+			let hideContent = document.querySelector('.content').classList.contains('hidden');
+			cursor.classList.add(hideContent?'cursor__inner--circle':'cursor__inner--cross');
+			// cursor.classList.remove(hideContent?'cursor__inner--cross':'cursor__inner--circle');
+			if (!hideContent){
+				let closeHint =  document.createElement('span');
+				closeHint.setAttribute("class", "cursor__inner");
+				closeHint.classList.add("cursor__inner--text");
+				closeHint.innerHTML="click to close";
+				cursor.appendChild(closeHint);
+			}
+		</script>
 	</body>
 </html>

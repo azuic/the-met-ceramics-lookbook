@@ -1,9 +1,27 @@
 
-html{font-family:sans-serif;-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%;}
-body{margin:0;}a:focus{outline:thin dotted;}
-a:active,a:hover{outline:0;}
-h1{font-size:2em;margin:0.67em 0;}
-abbr[title]{border-bottom:1px dotted;}
+html{
+	font-family:sans-serif;
+	-ms-text-size-adjust:100%;
+	-webkit-text-size-adjust:100%;
+}
+body{
+	margin:0;
+	cursor: none;
+}
+a:focus{
+	outline:thin dotted;
+}
+a:active, a:hover{
+	outline:0;
+}
+h1{
+	font-size:2em;
+	margin:0.67em 0;
+}
+abbr[title]{
+	border-bottom:1px dotted;
+}
+
 :root {
 	font-size: 16px;
 }
@@ -25,7 +43,9 @@ body {
 /* Common styles for all menus */
 .menu {
 	line-height: 1;
-	margin: 0 auto 3em;
+	align-content: center;
+	z-index: 5;
+	background-blend-mode: normal;
 }
 
 .menu__list {
@@ -41,15 +61,15 @@ body {
 
 .menu__item {
 	display: block;
-	margin: 1em 0;
+	margin: 0.5em 0;
 }
 
 .menu__link {
 	font-size: 1.05em;
 	font-weight: bold;
 	display: block;
-	padding: 1em;
-	cursor: pointer;
+	padding: 0.5em;
+	cursor: none;
 	-webkit-user-select: none;
 	-moz-user-select: none;
 	-ms-user-select: none;
@@ -64,63 +84,62 @@ body {
 	outline: none;
 }
 
-/* Iris */
-.menu--iris .menu__item {
-	margin: 0 1em;
-}
-
-.menu--iris .menu__link {
+/* sebastian */
+.menu--sebastian .menu__link {
 	position: relative;
+	display: block;
+	margin: 0 1em;
 	text-align: center;
-	color: #b5b5b5;
-	-webkit-transition: color 0.3s;
-	transition: color 0.3s;
+	color: #ffffff;
 }
 
-.menu--iris .menu__link:hover,
-.menu--iris .menu__link:focus {
-	color: #929292;
+.menu--sebastian .menu__link:hover,
+.menu--sebastian .menu__link:focus {
+	color: #fff;
+	opacity: 0.7;
+	background-color: crimson;
+	/*text-decoration-line: line-through;*/
+	/*text-decoration-width: 2px;*/
 }
 
-.menu--iris .menu__item--current .menu__link {
+.menu--sebastian .menu__item--current .menu__link {
 	color: #d94f5c;
 }
 
-.menu--iris .menu__link::before,
-.menu--iris .menu__link::after {
+.menu--sebastian .menu__link::before,
+.menu--sebastian .menu__link::after {
 	content: '';
 	position: absolute;
-	width: 10px;
-	height: 10px;
-	opacity: 0;
-	border: 2px solid #d94f5c;
-	-webkit-transition: -webkit-transform 0.3s, opacity 0.3s;
-	transition: transform 0.3s, opacity 0.3s;
-	-webkit-transition-timing-function: cubic-bezier(0.17, 0.67, 0.05, 1.29);
-	transition-timing-function: cubic-bezier(0.17, 0.67, 0.05, 1.29);
-}
-
-.menu--iris .menu__link::before {
-	top: 0;
 	left: 0;
-	border-width: 2px 0 0 2px;
-	-webkit-transform: translate3d(10px, 10px, 0);
-	transform: translate3d(10px, 10px, 0);
+	width: 100%;
+	height: 2px;
+	background: #d94f5c;
+	-webkit-transform: scale3d(0, 1, 1);
+	transform: scale3d(0, 1, 1);
+	-webkit-transition: -webkit-transform 0.2s;
+	transition: transform 0.2s;
 }
 
-.menu--iris .menu__link::after {
-	right: 0;
+.menu--sebastian .menu__link::before {
+	top: 0;
+	-webkit-transform-origin: 0 50%;
+	transform-origin: 0 50%;
+}
+
+.menu--sebastian .menu__link::after {
 	bottom: 0;
-	border-width: 0 2px 2px 0;
-	-webkit-transform: translate3d(-10px, -10px, 0);
-	transform: translate3d(-10px, -10px, 0);
+	-webkit-transform-origin: 100% 50%;
+	transform-origin: 100% 50%;
 }
 
-.menu--iris .menu__item--current .menu__link::before,
-.menu--iris .menu__item--current .menu__link::after {
-	opacity: 1;
-	-webkit-transform: translate3d(0, 0, 0);
-	transform: translate3d(0, 0, 0);
+.menu--sebastian .menu__item--current .menu__link::before,
+.menu--sebastian .menu__item--current .menu__link::after {
+	-webkit-transform: scale3d(1, 1, 1);
+	transform: scale3d(1, 1, 1);
+	-webkit-transition-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
+	transition-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
+	-webkit-transition-duration: 0.4s;
+	transition-duration: 0.4s;
 }
 
 
@@ -128,7 +147,7 @@ body {
 	pointer-events: none;
 	visibility: hidden;
 	position: fixed;
-	z-index: -1;
+	/*z-index: -1;*/
 }
 
 .cursor, .cursor__inner {
@@ -141,15 +160,16 @@ body {
 }
 
 .cursor__inner--circle {
-	width: 30px;
-	height: 30px;
+	width: 20px;
+	height: 20px;
 	border-radius: 50%;
-	border: 3px solid #fff;
+	border: 2px solid #fff;
 }
 
 .cursor__inner--cross {
-	width: 30px;
-	height: 30px;
+	width: 20px;
+	height: 20px;
+	color: crimson;
 }
 
 .cursor__inner--cross::before,
@@ -235,7 +255,7 @@ a {
 a:hover,
 a:focus {
 	color: var(--color-link-hover);
-	outline: none;
+	outline: white;
 }
 
 .frame {
@@ -288,16 +308,17 @@ a:focus {
 
 .frame__demos {
 	align-items: center;
-	margin: 1rem 0;
+	margin: 10rem 0;
 }
 
 .frame__demo--current,
 .frame__demo--current:hover {
 	color: var(--color-text);
+	text-decoration-line: line-through;
 }
 
 .content {
-	/*background-color: var(--color-bg-content);*/
+	background-color: var(--color-bg);
 	position: fixed;
 	height: 100vh;
 	/*top: 100px;*/
@@ -309,8 +330,8 @@ a:focus {
 	background-size: auto;
 	background-repeat: no-repeat;
 	/*background-blend-mode: soft-light;*/
-	cursor: pointer;
-	/*z-index:1000;*/
+	cursor: none;
+	z-index:100;
 }
 
 .content__title {
@@ -323,8 +344,8 @@ a:focus {
 	-webkit-touch-callout: none;
 	-webkit-user-select: none;
 	-moz-user-select: none;
-	-ms-user-select: none; 
-	user-select: none; 
+	-ms-user-select: none;
+	user-select: none;
 }
 
 .grid-wrap--hidden {
@@ -338,7 +359,7 @@ a:focus {
 	--cell-number: 20;
 	--cell-size: 5vw;
 	grid-template-columns: repeat(auto-fill, var(--cell-size));
-	will-change: transform;
+	z-index: 1;
 }
 
 @media screen and (orientation: portrait) {
@@ -353,7 +374,7 @@ a:focus {
 	width: 100%;
 	height: 100%;
 	position: relative;
-	cursor: pointer;
+	cursor: none;
 	/*overflow: hidden;*/
 	height: var(--cell-size);
 	/*outline: 1px solid rgba(0,0,0,0.87);*/
@@ -393,7 +414,7 @@ a:focus {
 
 @media screen and (min-width: 53em) {
 	body {
-		overflow: hidden;
+		overflow: scroll;
 	}
 	.frame {
 		position: fixed;
@@ -408,7 +429,6 @@ a:focus {
 		height: 100vh;
 		padding: 2rem 2rem 2.5rem;
 		pointer-events: none;
-		/*grid-template-columns: 40% 30% 30%;*/
 		grid-template-rows: auto auto auto;
 		grid-template-areas: 'nav demos main'
 							'... ... ...'
@@ -442,7 +462,7 @@ a:focus {
 		justify-self: end;
 	}
 	.frame__demos {
-		margin: 0;
+		margin: 10px;
 		grid-area: demos;
 		justify-self: center;
 		align-self: center;
@@ -450,9 +470,5 @@ a:focus {
 	}
 	.frame a {
 		pointer-events: auto;
-	}
-	.grid-wrap {
-		height: 100vh;
-		overflow: hidden;
 	}
 }
