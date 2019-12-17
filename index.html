@@ -189,8 +189,10 @@
 							typeEndWatcher.stateChange(function(){
 								if (typeEndWatcher.isInViewport && typeWatcher.isAboveViewport){
 									currentType.classList.add('menu__item--current');
+									currentType.style.backgroundColor="#d94f5c"
 								} else if (typeEndWatcher.isAboveViewport){
 									currentType.classList.remove('menu__item--current');
+									currentType.style.backgroundColor="none";
 								}
 							})
 						}
