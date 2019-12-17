@@ -226,6 +226,9 @@ body {
 	transition-duration: 0.4s;
 }
 
+.menu__item--current{
+	background: #d94f5c;
+}
 
 .hidden {
 	pointer-events: none;
