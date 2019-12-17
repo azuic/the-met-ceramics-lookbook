@@ -22,6 +22,32 @@
 	</head>
 	<body class="lookbook">
 		<script src="js/scrollMonitor.js"></script>
+
+		<div id="title" onclick="openInfo()">
+			<span>→</span><br>
+			<span id="title-text">The MET Ceramic Lookbook</span>
+		</div>
+		<div id="info">
+			<h3>The MET Ceramic Lookbook</h3>
+			<p>
+			<span> - a close lookup on the 9530 ceramic objects from the MET museum collection - </span><br>
+				<span> - scroll/click on tabs to go through all 9 types</span><br>
+				<span>       fritware, other/unspecified, terracotta, ceramic, pottery, earthenware, stoneware, clay, porcelain -</span><br>
+			<span> - click on each square to reveal a whole image and more details -</span><br>
+				<span id="closebtn" onclick="closeInfo()"> ← </span>
+			</p>
+		</div>
+		<script>
+			function openInfo() {
+				document.getElementById("info").style.width = "100%";
+				document.getElementById("title").style.display="none";
+			}
+
+			function closeInfo() {
+				document.getElementById("info").style.width = "0px";
+				document.getElementById("title").style.display="block";
+			}
+		</script>
 		<main id="mainContent">
 			<nav class="frame menu menu--sebastian">
 				<ul class="frame__demos menu__list" id="mediumSelection">
@@ -34,7 +60,7 @@
 							tabContainer.setAttribute('class', "menu__item");
 							tabContainer.setAttribute('id',`tab_${mediumData[m]}`);
 							let mediumContainer = document.createElement('a');
-							mediumContainer.href=`#${ mediumData[m]}`;
+							mediumContainer.href=`#top_${ mediumData[m]}`;
 							mediumContainer.setAttribute('class','frame__demo');
 							mediumContainer.classList.add('menu__link');
 							mediumContainer.setAttribute('id',`name_${mediumData[m]}`);
@@ -85,30 +111,6 @@
 							let watcher = scrollMonitor.create(element);
 							watcher.enterViewport(renderItem);
 							renderItem.call(watcher);
-							// if (element.getAttribute('data-isTop')==='true'){
-							// 	let topWatcher = scrollMonitor.create(element, {bottom:-1*element.innerHeight});
-							// 	topWatcher.stateChange(function(){
-							// 		if (!watcher.isInViewport){
-							//
-							// 		}
-							// 		if (topWatcher.isInViewport && topWatcher.isAboveViewport) {
-							// 			document.getElementById(`tab_${element.getAttribute('data-title')}`).classList.add('menu__item--current');
-							// 		} else if (topWatcher.isAboveViewport) {
-							// 			document.getElementById(`tab_${element.getAttribute('data-title')}`).classList.remove('menu__item--current');
-							// 		} else if ()
-							// 	})
-							// }
-							// if (element.getAttribute('data-isTop')==='true' || element.getAttribute('data-isBottom')==='true'){
-							// 	let typeWatcher = scrollMonitor.create(element)
-							// 	typeWatcher.stateChange(function () {
-							// 		if (element.getAttribute('data-isTop')==='true'){
-							//
-							// 		}
-							// 	})
-							// }
-							// watcher.stateChange(function () {
-							//
-							// })
 						}
 
 						let container = document.getElementById('gridContainer');
@@ -144,6 +146,8 @@
 									itemContainer.setAttribute('data-medium', objects[alltypes[mediumData[j]][i]].origin);
 									itemContainer.setAttribute('data-objId', alltypes[mediumData[j]][i]);
 									itemContainer.setAttribute('data-surface', objects[alltypes[mediumData[j]][i]].surface);
+									itemContainer.style.backgroundRepeat='no-repeat';
+									itemContainer.style.backgroundSize='cover';
 									let item = document.createElement('div');
 									item.setAttribute('class', 'grid__item-inner');
 									itemContainer.appendChild(item);
