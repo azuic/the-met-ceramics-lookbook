@@ -69,19 +69,76 @@ dominated by Islamic and Iranian fritware and earthenware. A full re-mine makes
 it a **Greek-and-Roman terracotta project**: red, black, buff. That is a
 different artwork, not a bigger version of the same one.
 
-**Mitigation, built in as a knob rather than a silent decision:** the miner
-takes a `--cap-per-type N` parameter.
+### 3a. Resolved: take all 52,524, no cap
 
-- `--cap-per-type 0` (off) → all 52,524, the literal 3C reading.
-- `--cap-per-type 2500` → ~18k objects, every material legible, terracotta
-  present but not overwhelming.
+The first draft of this plan defaulted to `--cap-per-type 2500`. That was set
+before working through how the cap interacts with the **color-major default
+sort**, and it was wrong. Reversed.
 
-Sampling when capped is **stratified by department and color bucket**, not
-`head -n`, so a cap thins each region evenly instead of amputating one.
+**Overwhelm is not the constraint — every option clears it by two orders of
+magnitude.** On a 1440×900 viewport at ~120px tiles (~90 tiles visible):
 
-Default in the committed config: **`--cap-per-type 2500`**, with the full run a
-one-flag change. Flip it if you want the raw 52k. This is a taste call and it
-is yours; the pipeline supports either without a rewrite.
+| cap | total | terracotta | screenfuls | scroll |
+|---:|---:|---:|---:|---:|
+| 2,500 | 20,945 | 11.9% | 233 | 55 m |
+| 5,000 | 29,883 | 16.7% | 332 | 79 m |
+| 10,000 | 40,229 | 24.9% | 447 | 106 m |
+| **none** | **52,524** | **42.4%** | **584** | **139 m** |
+
+The threshold for "I cannot exhaust this" is somewhere around 15–20 screenfuls.
+Every row above is far past it. Nobody perceives 52,000 as more numerous than
+20,000 — both are simply *more than a person can hold*. The extra 32k does not
+buy more overwhelm.
+
+**What it does buy is a cleaner claim.** "Every public-domain ceramic in the
+Met" is a stronger and more honest premise than "a sampled 21,000," and it
+removes a set of arbitrary curatorial decisions that would otherwise need
+defending.
+
+**And the terracotta objection largely dissolves under color sort.** The 2019
+grid was ordered by *material*, so a 42% bucket would have been a vast red
+section you scroll through. The rebuild's default order is **hue-major**, where
+those 22,295 terracotta objects do not clump as "the Greek and Roman department"
+— they spread across the warm region as a large orange-red mass. That reads as a
+*fact about the collection's color*, which is the entire subject of the piece,
+rather than as a lopsided filter. The distribution stops being a defect and
+becomes a finding.
+
+The cap remains implemented (`--cap-per-type N`, stratified by department and
+color bucket rather than `head -n`) but **defaults to off**. It stays in as an
+escape hatch, not a recommendation.
+
+### 3b. What makes 52k comfortable: three-tier level of detail
+
+Measured tile costs (small samples, ±20%):
+
+| Tile | Avg | × 52,524 |
+|---|---:|---:|
+| 40 px | 0.38 KB | **20 MB** |
+| 72 px | 0.78 KB | 42 MB |
+| 112 px | 1.4–1.7 KB | 73–90 MB |
+
+Naively, scrolling the whole grid at 112px means pulling ~80 MB. Three tiers fix
+that, and the top tier turns out to be free:
+
+1. **Overview — no images at all.** At the fully zoomed-out level each object is
+   a single flat swatch of its average OKLab color, drawn from `objects.bin`.
+   52,524 swatches at 8px is a 229×229 grid — **the entire collection on one
+   screen**, rendered from ~1 MB of data already computed in Stage 4. This is
+   the most overwhelming view available, and it is impossible with per-object
+   images. It is also the purest statement of the project's thesis: at maximum
+   zoom-out the collection *is* nothing but its color.
+2. **Scroll tier — 40px atlases, 20 MB total.** Small enough to hold the whole
+   collection resident. Fast scrolling never hits a hole or a grey placeholder.
+3. **Detail tier — 112px atlases, lazy.** Fetched only for what is actually on
+   screen and settled.
+
+So the full 52k costs ~20 MB to browse fluidly, with detail streamed on demand —
+better behaved than a capped set loading 112px tiles eagerly.
+
+**Remaining real cost of no cap:** the pipeline does ~52k API calls and
+downloads ~6.3 GB of source imagery (cached to disk, gitignored, never
+committed). That is hours of unattended running, resumable, and one-time.
 
 ---
 
