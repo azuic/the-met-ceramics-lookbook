@@ -113,14 +113,33 @@ class Pacer:
 
 
 def seed_from_gz():
-    """Populate the working cache from the committed .gz, if needed."""
-    if os.path.exists(CACHE_FILE) or not os.path.exists(GZ_FILE):
+    """Merge the committed .gz into the working cache.
+
+    Merge, not overwrite and not skip. CI and a laptop can both make progress
+    against the same branch, so either side may hold objects the other lacks.
+    An earlier version bailed out whenever a local cache existed, which
+    silently re-fetched everything CI had already done.
+    """
+    if not os.path.exists(GZ_FILE):
         return
     os.makedirs(CACHE, exist_ok=True)
+    have = load_done()
+    added = 0
     with gzip.open(GZ_FILE, "rt", encoding="utf-8") as src, \
-            open(CACHE_FILE, "w", encoding="utf-8") as dst:
-        dst.write(src.read())
-    print(f"  seeded working cache from {os.path.basename(GZ_FILE)}")
+            open(CACHE_FILE, "a", encoding="utf-8") as dst:
+        for line in src:
+            try:
+                oid = str(json.loads(line)["objectID"])
+            except Exception:
+                continue
+            if oid in have:
+                continue
+            dst.write(line if line.endswith("\n") else line + "\n")
+            have.add(oid)
+            added += 1
+    if added:
+        print(f"  merged {added:,} objects from "
+              f"{os.path.basename(GZ_FILE)}")
 
 
 def write_gz():
