@@ -71,9 +71,28 @@ The API sits behind Imperva and is genuinely aggressive:
 | after a burst | IP soft-banned; recovers in ~30s once traffic stops |
 
 The apparent "98 req/s" at concurrency 8 is 80 fast rejections, not
-throughput. `fetch.py` is therefore serial with a delay and a long backoff.
-Bursting does not make it faster, it makes it stop. Please do not raise the
-rate to be clever — it is someone's free public API.
+throughput. `fetch.py` is therefore serial with a self-tuning delay and a
+backoff. Bursting does not make it faster, it makes it stop. Please do not
+raise the rate to be clever — it is someone's free public API.
+
+Measured on GitHub runners, which are throttled harder than a home
+connection:
+
+| pacing | 403s | effective |
+|---|---|---|
+| fixed 0.18s | 4 in 7 min | 1.34 req/s |
+| adaptive, from 0.30s | 1 in 13 min | 1.66 req/s |
+
+The adaptive pacer settles around **0.31s** (~3.2 req/s attempted, ~1.7 req/s
+sustained once latency is counted). Request latency is now roughly equal to
+the delay, so the remaining ceiling is round-trip time, not the WAF.
+
+Full crawl is ~8 hours, i.e. two runs. Start a later run with `--delay 0.31`
+so it does not rediscover the rate from scratch.
+
+Note that a local run writes `data/api_objects.jsonl.gz` too, so if CI has
+committed since, discard the local copy (`git checkout --`) before pulling —
+the merge on next start will pick everything up by object ID anyway.
 
 ## Files
 
