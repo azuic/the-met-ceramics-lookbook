@@ -378,8 +378,19 @@ candidate IDs + metadata. Never stores the CSV. ~2 min.
 date, culture, department, `objectURL`. Rate-limited, retried with backoff,
 cached as one JSON per object. ~18k–52k calls; hours, but resumable.
 
-**Stage 3 — `tiles.py`** — download `web-large`, center-crop to square, resize,
-encode WebP.
+**Stage 3 — `tiles.py`** — download `web-large`, crop **a tight central
+fraction** of the frame, resize, encode WebP.
+
+> **Not a full centre crop.** This was wrong in the first draft and the
+> preview caught it. MET photographs are whole-object studio shots; a
+> square centre crop of one is still a whole vase floating on grey backdrop,
+> and a grid of those reads as a museum catalogue rather than a lookbook.
+> The 2019 grid shows patches of glaze, brushwork and motif, which means it
+> kept roughly **a third of the frame** (`--crop 0.32`), landing inside the
+> object. Compare `preview.png` against the 2019 thumbnail: same texture.
+>
+> This also raises the stakes on Stage 3b, since a tight crop on a small
+> object lands on backdrop far more often than a loose one.
 
 > **The 6.3 GB of source imagery is never stored.** Stage 3 streams: fetch one
 > image, crop it, record its colour, discard it. Peak disk is a single image,
