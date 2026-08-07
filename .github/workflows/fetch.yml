@@ -1,0 +1,78 @@
+name: Stage 2 — fetch MET metadata
+
+# Runs the long API crawl on GitHub's runners instead of a laptop, so closing
+# the lid or shutting down costs nothing.
+#
+# State lives in the repo (pipeline/data/api_objects.jsonl.gz), not in an
+# Actions cache that expires after 7 days. Each run seeds itself from that
+# file, fetches for up to ~5 hours, writes it back and commits. Re-run until
+# it reports complete.
+#
+# NOTE: `schedule:` only fires for workflows on a repository's DEFAULT branch,
+# which here is `master`. While this lives on `rebuild-2026` it must be
+# started manually from the Actions tab. Two runs finish the ~51.9k objects.
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_runtime:
+        description: "Seconds to fetch before stopping cleanly"
+        default: "17400"
+      delay:
+        description: "Seconds between requests (0.18 ≈ 5.5/s)"
+        default: "0.18"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: met-fetch
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch
+        run: |
+          python3 pipeline/fetch.py \
+            --max-runtime "${{ inputs.max_runtime }}" \
+            --delay "${{ inputs.delay }}" \
+            | tee fetch.log
+
+      - name: Commit progress
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f pipeline/data/api_objects.jsonl.gz
+          if git diff --staged --quiet; then
+            echo "no change to commit"
+          else
+            n=$(gzip -cd pipeline/data/api_objects.jsonl.gz | wc -l | tr -d ' ')
+            git commit -m "Stage 2: fetched metadata for ${n} objects [skip ci]"
+            git pull --rebase --autostash || true
+            git push
+          fi
+
+      # Belt and braces: the commit above is the real artefact, this is a
+      # second copy in case a push races with another run.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: api-objects
+          path: pipeline/data/api_objects.jsonl.gz
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Status
+        run: grep -E "cache now holds|INCOMPLETE|complete" fetch.log || true
