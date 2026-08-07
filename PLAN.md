@@ -217,21 +217,75 @@ strongest single source of the turquoise and cobalt palette families.
 Promoting it drops `other/unspecified` from 4,770 to roughly 1,600 — which is
 also what that bucket should be: a genuine remainder, not a dumping ground.
 
-### 4b. Glazed steatite — an open call for you
+### 4b. Glazed steatite — resolved: EXCLUDE, on visual grounds
 
-**759 public-domain objects** are baked or glazed steatite. Steatite is
-soapstone, a mineral, so strictly it is not ceramic. But it is fired and
-glazed, it sits in the same Egyptian cases, and it is visually
-indistinguishable from faience — one MET medium string literally reads
-**`"Faience (?) or glazed steatite, gray-green"`**. The museum's own cataloguer
-could not tell them apart.
+**758 glazed** + 463 unglazed public-domain steatite objects.
 
-Recommendation: **include, tagged `faience/steatite`**, on the grounds that
-this is a lookbook of fired, glazed surfaces rather than a mineralogy
-catalogue. Flag it if you'd rather hold the line at clay-and-frit bodies; it is
-a one-line change either way.
+**Materially, it qualifies.** Steatite is soapstone, so it is not clay — but
+neither is faience, which is a quartz-frit body. Once faience is admitted, the
+operative criterion is no longer "made of clay" but "fired, glazed,
+non-metallic." Glazed steatite passes every clause: firing converts talc to
+enstatite irreversibly, and the glaze is the same alkaline copper glaze that
+colours faience. The MET's own cataloguer could not always separate them —
+one medium string reads **`"Faience (?) or glazed steatite, gray-green"`**.
+On materials grounds the honest answer is yes, it belongs.
 
-### 4c. Audit of the 2019 categories themselves
+**It fails on photography, which is what actually matters here.** Inspecting
+the objects settles it:
+
+- They are **scarabs, stamp seals and cylinder seals** — the top object names,
+  by a wide margin. Typical dimensions from the records: **1.34 × 1.07 cm**,
+  **0.99 × 1.6 cm**, **3.81 × 0.97 cm**.
+- At that size the MET photographs them adrift in a large field of studio grey,
+  so a centre crop returns **backdrop, not object**.
+- Many frames show the **modern plaster impression** taken from the seal rather
+  than the artifact itself — grey cast material, none of the object's colour.
+
+Measured on six glazed steatite crops against six ordinary ceramics:
+
+| | mean saturation | mean luma σ |
+|---|---:|---:|
+| glazed steatite | **0.028** | 38.9 |
+| ordinary ceramics | **0.165** | 44.1 |
+
+Six times less saturated, with two of the six returning **exactly 0.000** —
+pure greyscale. In a lookbook whose entire subject is colour, these contribute
+grey squares.
+
+**Excluded — but for the right reason.** Not "it isn't ceramic," because it
+arguably is. It is excluded because its photography yields no colour.
+
+### 4c. The general lesson: crop quality control (new Stage 3b)
+
+Steatite is the extreme case of a problem that affects the whole dataset. Any
+small object — faience amulets and beads, seal stones, small fragments —
+photographs as a speck in a wide studio field, and a centre crop returns
+backdrop.
+
+**This already happened in 2019.** The surviving thumbnail of the original grid
+has visible flat grey and near-white squares scattered through it. Those are not
+pale glazes; they are empty backdrop. Fixing it is a visible improvement to the
+rebuild.
+
+**The test must not be a saturation floor.** White porcelain, cream earthenware
+and celadon are legitimately desaturated and belong in the grid — a naive
+saturation cut would delete exactly the objects the `cream` palette family is
+made of. Instead, Stage 3b detects **backdrop dominance**:
+
+1. Sample the border ring of the *full* source image — on a studio shot this is
+   the backdrop by construction.
+2. Compute the fraction of the centre crop within a small ΔE of that colour.
+3. If that fraction exceeds a threshold, the crop is mostly backdrop.
+4. Before rejecting, **retry with a tighter crop** — many small objects are
+   centred and recoverable at 30–40% of the frame. Only reject if the tight
+   crop still fails.
+
+This keeps a white porcelain bowl (fills the frame, low saturation, low
+backdrop fraction) and drops a 1cm scarab (high backdrop fraction), which is
+exactly the desired behaviour. Rejected objects stay in the dataset with a flag
+so the count remains honest, and are excluded from the grid.
+
+### 4d. Audit of the 2019 categories themselves
 
 Two separate questions, with two different answers.
 
