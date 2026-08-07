@@ -87,6 +87,9 @@ def font(kind, size):
             return ImageFont.truetype(SUP + "Baskerville.ttc", size)
         if kind == "serif-italic":
             return ImageFont.truetype(SUP + "Baskerville.ttc", size, index=1)
+        if kind == "sans":
+            return ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc",
+                                      size)
         if kind == "display":
             return ImageFont.truetype(SUP + "Didot.ttc", size)
         if kind == "display-italic":
@@ -162,6 +165,159 @@ def extract_images(dest):
     d = os.path.join(dest, "resize_crops")
     return [os.path.join(d, n) for n in sorted(os.listdir(d))
             if n.endswith(".png")]
+
+
+# --- floating modules --------------------------------------------------------
+# The chrome is a set of frosted panels scattered over the grid rather than a
+# fixed rail. This is what finally lets chrome sit ON the imagery: an earlier
+# attempt used a flat dark scrim and went muddy, because a scrim only dims a
+# busy mosaic -- it does not quiet it. A heavy backdrop blur does, by
+# destroying the high-frequency detail that made it noisy in the first place.
+
+def rounded_mask(size, radius):
+    m = Image.new("L", size, 0)
+    ImageDraw.Draw(m).rounded_rectangle([0, 0, size[0] - 1, size[1] - 1],
+                                        radius, fill=255)
+    return m
+
+
+def bloom(size, cx, cy, radius, rgb, peak=150):
+    """Diffuse radial colour cloud, the reference's signature."""
+    n = 48
+    g = Image.new("RGBA", (n, n), rgb + (0,))
+    px = g.load()
+    for yy in range(n):
+        for xx in range(n):
+            dx = (xx + .5) / n - cx
+            dy = (yy + .5) / n - cy
+            t = max(0.0, 1.0 - math.hypot(dx, dy) / radius)
+            px[xx, yy] = rgb + (int(peak * t * t),)
+    return g.resize(size, Image.BICUBIC).filter(
+        ImageFilter.GaussianBlur(size[0] / 14))
+
+
+def panel(canvas, box, radius=22, tint=235, blooms=()):
+    """Frosted glass over whatever the grid is showing underneath."""
+    x0, y0, x1, y1 = box
+    size = (x1 - x0, y1 - y0)
+    region = canvas.crop(box).convert("RGBA")
+    region = region.filter(ImageFilter.GaussianBlur(26))
+    region = Image.alpha_composite(
+        region, Image.new("RGBA", size, (250, 249, 246, tint)))
+    for rgb, cx, cy, r, peak in blooms:
+        region = Image.alpha_composite(region,
+                                       bloom(size, cx, cy, r, rgb, peak))
+    mask = rounded_mask(size, radius)
+    canvas.paste(region, (x0, y0), mask)
+    edge = Image.new("RGBA", size, (0, 0, 0, 0))
+    ImageDraw.Draw(edge).rounded_rectangle(
+        [0, 0, size[0] - 1, size[1] - 1], radius,
+        outline=(255, 255, 255, 165), width=1)
+    canvas.alpha_composite(edge, (x0, y0))
+    return ImageDraw.Draw(canvas, "RGBA")
+
+
+def fitted(d, text, kind, size, max_w, floor=15):
+    """Largest size at or below `size` that fits `max_w`."""
+    while size > floor:
+        f = font(kind, size)
+        if d.textlength(text, font=f) <= max_w:
+            return f
+        size -= 1
+    return font(kind, floor)
+
+
+def centred(d, cx, y, text, f, fill, track=0.0):
+    w = tracked_w(d, text, f, track) if track else d.textlength(text, font=f)
+    if track:
+        tracked(d, (cx - w / 2, y), text, f, fill, track)
+    else:
+        d.text((cx - w / 2, y), text, font=f, fill=fill)
+
+
+def load_counts():
+    """Real per-material counts from stage 1, never invented."""
+    try:
+        with open(os.path.join(HERE, "data", "mine_summary.json")) as f:
+            return json.load(f)["by_type"]
+    except Exception:
+        return {}
+
+
+def draw_float_chrome(canvas, W, H):
+    """Scattered, modular navigation. Nothing is docked to an edge."""
+    # --- title module ---
+    box = (86, 74, 566, 286)
+    d = panel(canvas, box, 24, 232,
+              blooms=[((42, 157, 163), .78, .28, .62, 120)])
+    d.text((122, 106), "Ceramic", font=font("display", 44), fill=INK)
+    d.text((124, 154), "Lookbook", font=font("display-italic", 44), fill=INK)
+    total = sum(load_counts().values()) or 51913
+    tracked(d, (122, 222), f"{total:,} OBJECTS  ·  OPEN ACCESS",
+            font("mono", 12), (108, 106, 100), 2.0)
+    tracked(d, (122, 246), "THE METROPOLITAN MUSEUM OF ART", font("mono", 12),
+            MUTED, 2.0)
+
+    # --- palette cluster: five across, two down ---
+    cw, chh, gap = 158, 134, 15
+    x0, y0 = 86, 330
+    for i, (name, rgb) in enumerate(PALETTE):
+        # slight vertical stagger so the cluster reads as scattered modules
+        # rather than as a table
+        cx0 = x0 + (i % 5) * (cw + gap)
+        cy0 = y0 + (i // 5) * (chh + gap) + (10 if i % 2 else 0)
+        on = i in (0, 1)
+        # pale families need a stronger bloom to register at all
+        lum = (rgb[0] * .299 + rgb[1] * .587 + rgb[2] * .114) / 255
+        peak = int((168 if on else 124) * (1 + 0.75 * lum))
+        d = panel(canvas, (cx0, cy0, cx0 + cw, cy0 + chh), 18,
+                  242 if on else 226,
+                  blooms=[(rgb, .5, .33, .60, peak)])
+        mid = cx0 + cw // 2
+        label = name.title()
+        centred(d, mid, cy0 + 78, label,
+                fitted(d, label, "serif", 23, cw - 26), INK)
+        if on:
+            d.ellipse([cx0 + cw - 26, cy0 + 13, cx0 + cw - 14, cy0 + 25],
+                      fill=ACCENT)
+    # No per-family counts: colour extraction is stage 4 and has not run.
+    # Inventing plausible numbers for a preview is how a mockup starts lying.
+
+    # --- material module ---
+    box = (W - 466, 74, W - 86, 560)
+    d = panel(canvas, box, 24, 234,
+              blooms=[((188, 106, 72), .24, .82, .66, 104)])
+    tracked(d, (W - 430, 108), "MATERIAL", font("mono", 11), MUTED, 3.0)
+    counts = load_counts()
+    yy = 148
+    for mat in MATERIALS:
+        on = mat == "fritware"
+        if on:
+            d.ellipse([W - 432, yy + 7, W - 422, yy + 17], fill=ACCENT)
+        d.text((W - 402, yy), mat.title(), font=font("serif", 22),
+               fill=INK if on else (128, 126, 120))
+        n = counts.get(mat)
+        if n:
+            txt = f"{n:,}"
+            w = tracked_w(d, txt, font("mono", 12), 1.6)
+            tracked(d, (W - 118 - w, yy + 8), txt, font("mono", 12),
+                    MUTED, 1.6)
+        yy += 43
+
+    # --- layout module ---
+    box = (W - 466, 596, W - 200, 742)
+    d = panel(canvas, box, 20, 232,
+              blooms=[((120, 130, 150), .7, .7, .6, 92)])
+    tracked(d, (W - 430, 626), "LAYOUT", font("mono", 11), MUTED, 3.0)
+    draw_layout_dial(d, W - 428, 674, active=1)
+
+    # --- sort module, small ---
+    box = (86, 640, 372, 748)
+    d = panel(canvas, box, 20, 232,
+              blooms=[((186, 143, 62), .8, .35, .6, 96)])
+    tracked(d, (118, 668), "SORTED BY", font("mono", 11), MUTED, 3.0)
+    d.text((118, 692), "Hue", font=font("serif", 26), fill=INK)
+    tracked(d, (176, 702), "· then lightness", font("mono", 12), MUTED, 1.4)
 
 
 # --- chrome ------------------------------------------------------------------
@@ -328,7 +484,7 @@ def draw_detail(args):
         f_v = font("mono", 12)
         tracked(bd, (26, 500), "THE METROPOLITAN MUSEUM OF ART", f_v,
                 (255, 236, 220, 210), 2.2)
-        drop(canvas, back, (742, 96), angle=-2.5)
+        drop(canvas, back, (468, 118), angle=-2.5)
 
         # --- the plate: image tipped onto a paper mount ---
         pw = 520
@@ -340,7 +496,7 @@ def draw_detail(args):
                 font("mono", 13), MUTED, 2.2)
         # No "OPEN ACCESS" here: the stamp on the catalogue card already
         # says it, and the crop chip overlaps this corner.
-        drop(canvas, mount, (524, 128), angle=1.2, blur=22, alpha=64)
+        drop(canvas, mount, (250, 150), angle=1.2, blur=22, alpha=64)
 
         # --- the crop tile: what you clicked in the grid ---
         sw = swatch.resize((150, 150), Image.LANCZOS)
@@ -348,7 +504,7 @@ def draw_detail(args):
         chip.paste(sw, (12, 12))
         cd = ImageDraw.Draw(chip)
         tracked(cd, (12, 172), "THE CROP", font("mono", 10), MUTED, 2.4)
-        drop(canvas, chip, (1006, 636), angle=-5, blur=16, alpha=54)
+        drop(canvas, chip, (732, 658), angle=-5, blur=16, alpha=54)
 
     # --- catalogue card ---
     cw, ch = 700, 690
@@ -395,7 +551,7 @@ def draw_detail(args):
     tracked(d, (44, ch - 40), "TEAR HERE FOR THE FULL RECORD",
             font("mono", 10), (120, 118, 112), 2.2)
     scissors(d, cw - 60, ch - 54, (120, 118, 112))
-    drop(canvas, card, (1290, 118), angle=-1.2, blur=22, alpha=60)
+    drop(canvas, card, (1180, 140), angle=-1.2, blur=22, alpha=60)
 
     # --- three attribute blocks, the reference's info row ---
     d2 = ImageDraw.Draw(canvas, "RGBA")
@@ -405,7 +561,7 @@ def draw_detail(args):
                "stonepaste body"),
               ((60, 58, 54), "Surface", SUBJECT["surface"].upper(),
                "painted, then glazed")]
-    bx = 524
+    bx = 250
     for rgb, head, val, note in blocks:
         d2.ellipse([bx, 920, bx + 34, 954], fill=rgb)
         d2.ellipse([bx + 13, 933, bx + 21, 941], fill=(243, 241, 236))
@@ -414,7 +570,15 @@ def draw_detail(args):
         tracked(d2, (bx, 1046), note, font("mono", 12), MUTED, 1.6)
         bx += 400
 
-    draw_sidebar(canvas, args.sidebar, H, detail=True)
+    # Floating back pill instead of a docked rail -- same modular language
+    # as the grid view.
+    d3 = panel(canvas, (86, 62, 396, 130), 34, 236,
+               blooms=[((42, 157, 163), .84, .5, .6, 96)])
+    d3.ellipse([104, 78, 140, 114], outline=(120, 117, 110), width=1)
+    d3.line([114, 96, 128, 96], fill=INK, width=1)
+    d3.line([114, 96, 119, 91], fill=INK, width=1)
+    d3.line([114, 96, 119, 101], fill=INK, width=1)
+    tracked(d3, (154, 89), "BACK TO THE GRID", font("mono", 12), INK, 2.2)
     canvas.convert("RGB").save(args.out, quality=95)
     print(f"\n  wrote {args.out}  ({W}x{H})")
 
@@ -423,7 +587,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--view", choices=("grid", "detail"), default="grid")
     ap.add_argument("--tile", type=int, default=55)
-    ap.add_argument("--cols", type=int, default=30)
+    ap.add_argument("--cols", type=int, default=38)
     ap.add_argument("--rows", type=int, default=21)
     ap.add_argument("--sidebar", type=int, default=450)
     ap.add_argument("--hue-start", type=float, default=185)
@@ -476,15 +640,15 @@ def main():
             step = len(tiles) / want
             tiles = [tiles[int(i * step)] for i in range(want)]
 
-        W = args.sidebar + args.cols * args.tile
+        W = args.cols * args.tile
         H = args.rows * args.tile
-        canvas = Image.new("RGB", (W, H), BONE)
+        canvas = Image.new("RGBA", (W, H), BONE + (255,))
         for i, t in enumerate(tiles):
-            canvas.paste(t["img"], (args.sidebar + (i % args.cols) * args.tile,
+            canvas.paste(t["img"], ((i % args.cols) * args.tile,
                                     (i // args.cols) * args.tile))
 
-        draw_sidebar(canvas, args.sidebar, H)
-        draw_stamp(canvas, W - 128, H - 118)
+        draw_float_chrome(canvas, W, H)
+        canvas = canvas.convert("RGB")
         canvas.save(args.out, quality=95)
         print(f"\n  wrote {args.out}  ({W}x{H})")
 

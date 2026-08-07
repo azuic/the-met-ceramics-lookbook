@@ -579,28 +579,39 @@ over *Stonepaste; polychrome painted*, `CULTURE` over *Iran, Kashan*.
 > SIL OFL. Self-host the woff2 files **in the repo**. A Google Fonts link is
 > the same external-host dependency that killed the 2019 site.
 
-**The load-bearing rule: chrome never floats over the imagery.**
+**Navigation is floating modules, not a rail.**
 
-The first attempt put the rails over the grid behind a dark scrim, and it was
-muddy and illegible — a delicate paper interface cannot survive sitting on
-51,913 saturated tiles. So the chrome gets its own paper plane: a bone
-sidebar, a single hairline rule, and the grid full-bleed beside it. The
-reference works the same way, and it is why it works.
+No docked sidebar. The chrome is a set of frosted panels scattered over the
+grid — a title module, a cluster of palette cards, a material module, a
+layout module, a sort module — placed asymmetrically and staggered so the
+cluster reads as scattered objects rather than as a table.
+
+This took two attempts to get right, and the failure is worth recording. The
+first version put the rails over the grid behind a **flat dark scrim**, and it
+went muddy: a scrim only *dims* a busy mosaic, it does not quiet it, so 51,913
+competing details still fought the type. The fix is a **heavy backdrop blur**,
+which destroys the high-frequency detail that made the field noisy in the
+first place. Blur, not opacity, is what lets a delicate interface sit directly
+on a maximalist image.
+
+**Each palette module carries a diffuse bloom of its own glaze colour.** The
+filter is not a swatch beside a word — the card *is* a soft cloud of the
+pigment. Bloom intensity is compensated for luminance, or the pale families
+(cream, celadon, lustre) disappear into the panel while cobalt and manganese
+shout.
 
 **Controls**
 
-- Filters are lists, not chips. Active is an ink-coloured item with a small
-  filled terracotta dot or a hairline terracotta underline; inactive is muted
-  grey. Nothing gets a button.
-- Palette swatches are small filled circles in the glaze colour — the filter
-  is literally a row of pigments.
-- The layout wheel is drawn as **shapes rather than words**, in the same
-  hairline-outline idiom as the stamp: ▭ ■ ◆ ⬡.
-- Section headers are faint tracked caps with a hairline rule running to the
-  margin.
-- A perforation and a tracked-caps count close the sidebar, the way a receipt
-  tears off.
-- A dashed rubber stamp marks the collection as Open Access.
+- Filters are lists and cards, never chips or buttons. Active is ink-coloured
+  with a small terracotta dot; inactive is muted grey.
+- The layout wheel is drawn as **shapes rather than words** — ▭ ■ ◆ ⬡.
+- Section headers are faint tracked caps.
+- Serif for names, tracked mono for labels and counts.
+
+**Never invent data, even in a mockup.** The palette modules deliberately
+carry *no* counts: colour extraction is Stage 4 and has not run, and plausible
+made-up numbers are how a mockup starts lying. The material module shows real
+Stage 1 counts, read from `mine_summary.json`.
 
 **Detail view** — the object card is a catalogue card: monospace field labels
 over serif values, a dashed rule, an accession stamp bearing the object ID,
