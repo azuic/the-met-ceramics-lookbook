@@ -10,7 +10,7 @@ expire. See `../PLAN.md` for the reasoning.
 |---|---|---|
 | 1 — mine the CSV | `mine.py` | **done** |
 | gate — validate the rules | `validate.py` | **passing** |
-| 2 — fetch image URLs + metadata | `fetch.py` | not started |
+| 2 — fetch image URLs + metadata | `fetch.py` | **ready** — run locally or via CI |
 | 3 — crop and resize tiles | `tiles.py` | not started |
 | 3b — crop quality control | `qc.py` | not started |
 | 4 — extract colour | `color.py` | not started |
@@ -26,6 +26,41 @@ python3 pipeline/mine.py --cap-per-type 10000
 ```
 
 `mine.py` caches the 318 MB CSV in `cache/` and reuses it. Delete it to refresh.
+
+### Stage 2 without leaving a laptop on
+
+The crawl takes ~7 hours at a polite rate. Two ways to run it:
+
+**On GitHub's runners** — Actions tab → *Stage 2 — fetch MET metadata* → Run
+workflow. State lives in `data/api_objects.jsonl.gz`, committed back to the
+branch after each run, so runs chain across machines. Needs ~2 runs.
+
+`schedule:` is deliberately not used: GitHub only fires scheduled workflows
+from the repository's **default** branch (`master` here), so it would silently
+never run while this work lives on `rebuild-2026`.
+
+**Locally, surviving a closed lid:**
+
+```sh
+caffeinate -is python3 pipeline/fetch.py
+```
+
+Either way it is resumable. Interrupting it costs only the in-flight request.
+
+### Rate limits — measured, not guessed
+
+The API sits behind Imperva and is genuinely aggressive:
+
+| concurrency | result |
+|---|---|
+| 4 | ~12 req/s, occasional 403 |
+| 8 | **403 on every request** |
+| after a burst | IP soft-banned; recovers in ~30s once traffic stops |
+
+The apparent "98 req/s" at concurrency 8 is 80 fast rejections, not
+throughput. `fetch.py` is therefore serial with a delay and a long backoff.
+Bursting does not make it faster, it makes it stop. Please do not raise the
+rate to be clever — it is someone's free public API.
 
 ## Files
 

@@ -1,4 +1,5 @@
 cache/
 data/candidates.jsonl
+!data/candidates.jsonl.gz
 *.pyc
 __pycache__/

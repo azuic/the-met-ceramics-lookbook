@@ -14,6 +14,7 @@ in memory. See PLAN.md section 5.
 import argparse
 import collections
 import csv
+import gzip
 import json
 import os
 import sys
@@ -151,9 +152,15 @@ def main():
         records = apply_cap(records, args.cap_per_type)
         print(f"  cap {args.cap_per_type:,}/type: {before:,} -> {len(records):,}")
 
+    payload = "".join(json.dumps(r, ensure_ascii=False) + "\n"
+                      for r in records)
     with open(args.out, "w", encoding="utf-8") as f:
-        for r in records:
-            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+        f.write(payload)
+    # Committed alongside the code: ~1 MB gzipped, which lets CI run stage 2
+    # without ever downloading the 318 MB CSV.
+    with gzip.open(args.out + ".gz", "wt", encoding="utf-8",
+                   compresslevel=9) as f:
+        f.write(payload)
 
     by_type = collections.Counter(r["type"] for r in records)
     by_dept = collections.Counter(r["department"] for r in records)
