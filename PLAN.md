@@ -91,25 +91,88 @@ Recovered by mining token frequencies out of the 2019 labels. It is a
 **first-match keyword priority** over the lowercased `Medium` string:
 
 ```
-stonepaste | fritware        → fritware
-terracotta | terra-cotta     → terracotta
-porcelain                    → porcelain
-earthenware                  → earthenware
-stoneware                    → stoneware
-pottery                      → pottery
-ceramic                      → ceramic
-clay                         → clay
-composite body|paste|glaze|ware → other/unspecified
-otherwise                    → not a ceramic, skip
+stonepaste | fritware | frit          → fritware
+faience                               → faience          ← NEW, see 4a
+terracotta | terra-cotta              → terracotta
+porcelain | bone china | pâte-sur-pâte
+  | parian ware | parian porcelain    → porcelain
+earthenware | creamware | pearlware
+  | redware | delft | maiolica
+  | majolica | terre de lorraine      → earthenware
+stoneware | jasperware | jasper dip
+  | black basalt | basalt ware
+  | celadon | raku | ironstone        → stoneware
+pottery                               → pottery
+ceramic                               → ceramic
+clay                                  → clay
+composite body | paste | glazed
+  | glaze | ware | biscuit | bisque   → other/unspecified
+otherwise                             → not a ceramic, skip
 ```
 
-Order matters — `stonepaste` must be tested before `stoneware`, and
-`earthenware` before `ware`.
+**Ordering hazards.** `stonepaste` must be tested before `stoneware`;
+`earthenware` before `ware`; `bone china` before the bare `china` of
+`ironstone china`.
 
-**Validation gate:** re-running this over the 9,530 surviving 2019 IDs must
-reproduce the original `type` label. Target ≥99% agreement; investigate every
-disagreement before proceeding. This is what makes 3C safe — we have ground
-truth to check against.
+**Substring traps — verified false positives, must NOT be matched bare:**
+
+| Term | What it actually hits | Correct form |
+|---|---|---|
+| `tile` | **`Textiles`** — 7,977 woven textiles | `ceramic tile`, or Classification `Ceramics-Tiles` |
+| `gres` | `"Ingres"` paper | `grès` w/ accent only |
+| `parian` | Parian **marble** (25) | `parian ware`/`parian porcelain` |
+| `jasper` | the mineral (204) | `jasperware`, `jasper dip` |
+| `basalt` | the stone (64) | `black basalt`, `basalt ware` |
+| `brick` | embroidery **brick stitch** | `mudbrick`, `fired brick` |
+| `composition` | gesso/plaster ornament (117) | — exclude |
+| `enamel on`, `cloisonn` | metalwork (638) | — exclude |
+| `sgraffito` | a **drawing** technique on paper (12) | — exclude |
+| `kaolin` | pigment on wooden objects (3) | — exclude |
+
+**Validation gate — now two independent checks:**
+
+1. **Against 2019 labels.** Re-running over the 9,530 surviving IDs must
+   reproduce the original `type`. Target ≥99%.
+2. **Against the MET's own taxonomy.** 20,103 public-domain objects carry a
+   `Classification` starting with `Ceramics`. The medium rules already catch
+   **19,926 of them — 99.1% recall**, with only 177 misses (112 of which were
+   bone china, now fixed). Any future rule change must not regress this.
+
+Classification is high-precision but low-recall — it labels only 20,103 of the
+52,524 medium-matched objects, because Greek vases are classified `Vases`, not
+`Ceramics`. So it is used as a **union input and a test**, never as a
+replacement for medium matching.
+
+### 4a. Faience — promoted to its own material
+
+The single most consequential correction. **3,129 public-domain objects** have
+`faience` in their medium, 2,547 of them from Egyptian Art. Under the 2019
+rules they fall through to `other/unspecified` — they are **66% of that
+bucket's 4,770**, which is why "other" ballooned from 75.
+
+Egyptian faience is not really clay: it is a quartz-frit body that
+self-glazes in the kiln, producing the copper-blue and turquoise that is the
+most chromatically distinctive surface in the entire collection. For a project
+whose whole subject is *color*, burying it in a bucket called "other" is the
+worst available outcome. It gets its own material tab, and it will be the
+strongest single source of the turquoise and cobalt palette families.
+
+Promoting it drops `other/unspecified` from 4,770 to roughly 1,600 — which is
+also what that bucket should be: a genuine remainder, not a dumping ground.
+
+### 4b. Glazed steatite — an open call for you
+
+**759 public-domain objects** are baked or glazed steatite. Steatite is
+soapstone, a mineral, so strictly it is not ceramic. But it is fired and
+glazed, it sits in the same Egyptian cases, and it is visually
+indistinguishable from faience — one MET medium string literally reads
+**`"Faience (?) or glazed steatite, gray-green"`**. The museum's own cataloguer
+could not tell them apart.
+
+Recommendation: **include, tagged `faience/steatite`**, on the grounds that
+this is a lookbook of fired, glazed surfaces rather than a mineralogy
+catalogue. Flag it if you'd rather hold the line at clay-and-frit bodies; it is
+a one-line change either way.
 
 `surface` (transparent glaze, underglaze, tin glaze, slip, luster, unglazed…)
 and `country`/`iso` are re-derived the same way, validated the same way. Note
