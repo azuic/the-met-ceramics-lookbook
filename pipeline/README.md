@@ -32,8 +32,21 @@ python3 pipeline/mine.py --cap-per-type 10000
 The crawl takes ~7 hours at a polite rate. Two ways to run it:
 
 **On GitHub's runners** — Actions tab → *Stage 2 — fetch MET metadata* → Run
-workflow. State lives in `data/api_objects.jsonl.gz`, committed back to the
-branch after each run, so runs chain across machines. Needs ~2 runs.
+workflow, with `rebuild-2026` selected as the branch. Or from the CLI:
+
+```sh
+gh api -X POST \
+  repos/azuic/the-met-ceramics-lookbook/actions/workflows/fetch.yml/dispatches \
+  -f ref=rebuild-2026 -f 'inputs[max_runtime]=17400'
+```
+
+State lives in `data/api_objects.jsonl.gz`, committed back to the branch after
+each run, so runs chain across machines. Needs ~2 runs.
+
+The workflow file is duplicated onto `master`. That is not an accident:
+GitHub refuses to register a `workflow_dispatch` trigger unless the workflow
+exists on the repository's default branch. Runs still execute the copy on
+whichever branch they target.
 
 `schedule:` is deliberately not used: GitHub only fires scheduled workflows
 from the repository's **default** branch (`master` here), so it would silently
