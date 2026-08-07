@@ -174,6 +174,79 @@ this is a lookbook of fired, glazed surfaces rather than a mineralogy
 catalogue. Flag it if you'd rather hold the line at clay-and-frit bodies; it is
 a one-line change either way.
 
+### 4c. Audit of the 2019 categories themselves
+
+Two separate questions, with two different answers.
+
+**As a mechanical rule, it is sound.** Only **18 of 9,528 objects (0.2%)** match
+more than one keyword, so first-match ordering almost never decides anything
+arbitrarily. Recall against the MET's own `Ceramics` classification is 99.1%.
+The rule does what it claims to do, deterministically.
+
+**As a taxonomy of materials, it is not one.** The nine buckets mix four
+different levels of abstraction:
+
+| Level | Buckets |
+|---|---|
+| The whole field | `ceramic` |
+| The raw material | `clay` |
+| A craft / form | `pottery` |
+| A **body class** (the real axis) | `earthenware`, `stoneware`, `porcelain`, `fritware`, `faience` |
+| A *variety* of a body class | `terracotta` (⊂ earthenware) |
+
+The real ceramic taxonomy runs on body and vitrification temperature —
+earthenware (porous, ~1000–1150 °C), stoneware (vitrified, ~1200–1300 °C),
+porcelain (translucent, ~1300–1400 °C), plus the quartz-frit bodies (fritware,
+faience) that sit outside that European triad. Only five of the nine buckets
+name a body.
+
+**What the other four are actually tracking: departments.**
+
+| 2019 bucket | Dominant department | Share |
+|---|---|---|
+| `ceramic` | Arts of Africa, Oceania, and the Americas | **93.9%** |
+| `fritware` | Islamic Art | 99.2% |
+| `porcelain` | The American Wing | 80.8% |
+| `terracotta` | Asian Art | 75.5% |
+| `pottery` | Egyptian Art | 67.6% |
+| `clay` | Asian Art | 63.8% |
+| `earthenware` | Islamic Art | 49.0% |
+| `stoneware` | The American Wing | 48.4% |
+
+`ceramic` is not a material category — it is *Ancient American pottery*, at 94%
+purity. `pottery` is largely *Egyptian ostraca and sherds*. The filter is a
+department filter wearing a material label.
+
+Corroborating this: for several buckets the medium string carries almost no
+information at all. **59% of `ceramic` objects have the medium string literally
+just "Ceramic"** (only 56 distinct strings across 1,606 objects); `porcelain` is
+64% bare, `stoneware` 50%, `pottery` 48%. Those are records of which curator
+typed which word.
+
+**Verdict: the logic is fine, the labels overclaim.** And this is largely not
+fixable — when the cataloguer wrote "Ceramic" and nothing else, the body is
+genuinely unknown. Folding it into `earthenware` would be *inventing* data. The
+vague buckets are an honest record of cataloguing uncertainty, and should be
+presented as such rather than silently corrected.
+
+**Resolution — split the one axis into two, and rename:**
+
+- **Body** — `earthenware / stoneware / porcelain / fritware / faience /
+  unspecified`. Defensible, technically real, used for grouping.
+- **As catalogued** — the existing nine terms, kept verbatim, presented as *the
+  museum's own word for it* rather than as material truth. This preserves the
+  original piece's language and vocabulary while dropping the false claim.
+- **Department / culture** — promoted to a filter in its own right, since the
+  audit shows it is the latent variable doing most of the work anyway. It is
+  also simply more useful to someone browsing.
+
+**One deliberate exception.** `terracotta` is technically a variety of
+earthenware, not a sibling to it, so a strict taxonomy would fold it in. Keeping
+it separate anyway: unglazed iron-red body is one of the most visually distinct
+surfaces in the collection, and this is a project about surface, not about
+firing temperature. Where the technical and the visual taxonomy disagree here,
+the visual one wins.
+
 `surface` (transparent glaze, underglaze, tin glaze, slip, luster, unglazed…)
 and `country`/`iso` are re-derived the same way, validated the same way. Note
 the 2019 data contains a typo bucket, `unsepcified` (730 objects), merged into
