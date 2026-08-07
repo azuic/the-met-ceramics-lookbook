@@ -22,7 +22,7 @@ import subprocess
 import sys
 import tempfile
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -60,8 +60,33 @@ MATERIALS = ["fritware", "faience", "terracotta", "ceramic", "pottery",
 SUP = "/System/Library/Fonts/Supplemental/"
 
 
+# The detail view's subject. Real MET record, fetched once and inlined so
+# preview.py stays offline and reproducible.
+SUBJECT = {
+    "id": "446207",
+    "accession": "12.49.4",
+    "title": "Tile with Image of Phoenix",
+    "objectName": "Tile from a frieze",
+    "medium": ("Stonepaste; modeled, underglaze painted in blue and "
+               "turquoise, luster-painted on opaque white ground"),
+    "date": "late 13th century",
+    "place": "Iran, probably Takht-i Sulayman",
+    "department": "Islamic Art",
+    "dimensions": "H. 14 3/4 in. (37.5 cm)",
+    "credit": "Rogers Fund, 1912",
+    "type": "fritware",
+    "surface": "underglaze · luster",
+    "family": "turquoise",
+    "familyRGB": (42, 157, 163),
+}
+
+
 def font(kind, size):
     try:
+        if kind == "serif":
+            return ImageFont.truetype(SUP + "Baskerville.ttc", size)
+        if kind == "serif-italic":
+            return ImageFont.truetype(SUP + "Baskerville.ttc", size, index=1)
         if kind == "display":
             return ImageFont.truetype(SUP + "Didot.ttc", size)
         if kind == "display-italic":
@@ -141,7 +166,7 @@ def extract_images(dest):
 
 # --- chrome ------------------------------------------------------------------
 
-def draw_sidebar(canvas, x0, H):
+def draw_sidebar(canvas, x0, H, detail=False):
     """Left paper plane. The chrome never floats over the imagery -- that is
     what makes a delicate interface survive a 51,913-tile colour field."""
     d = ImageDraw.Draw(canvas, "RGBA")
@@ -157,7 +182,8 @@ def draw_sidebar(canvas, x0, H):
     d.line([m + 11, 63, m + 24, 63], fill=INK, width=1)
     d.line([m + 11, 63, m + 16, 58], fill=INK, width=1)
     d.line([m + 11, 63, m + 16, 68], fill=INK, width=1)
-    tracked(d, (m + 50, 57), "ALL OBJECTS", f_nav, INK, 2.4)
+    tracked(d, (m + 50, 57), "BACK TO THE GRID" if detail else "ALL OBJECTS",
+            f_nav, INK, 2.4)
 
     # wordmark: roman over italic
     d.text((m - 4, 128), "Ceramic", font=font("display", 60), fill=INK)
@@ -248,8 +274,154 @@ def draw_stamp(canvas, x, y):
                 (150, 74, 48, 235), 2.2)
 
 
+def scissors(d, x, y, col):
+    """Andale Mono has no U+2702, and a tofu box in the corner of a receipt
+    is worse than no mark at all -- so draw it."""
+    d.line([x - 9, y - 7, x + 6, y + 5], fill=col, width=1)
+    d.line([x - 9, y + 7, x + 6, y - 5], fill=col, width=1)
+    d.ellipse([x + 5, y - 9, x + 12, y - 2], outline=col, width=1)
+    d.ellipse([x + 5, y + 2, x + 12, y + 9], outline=col, width=1)
+
+
+def rounded(size, radius, fill):
+    im = Image.new("RGBA", size, (0, 0, 0, 0))
+    ImageDraw.Draw(im).rounded_rectangle([0, 0, size[0] - 1, size[1] - 1],
+                                         radius, fill=fill)
+    return im
+
+
+def drop(canvas, card, xy, angle=0, blur=18, alpha=58, offset=(6, 14)):
+    """Composite a card with a soft shadow, optionally rotated -- the
+    reference stacks its postcard, ticket and receipt at slight angles."""
+    if angle:
+        card = card.rotate(angle, resample=Image.BICUBIC, expand=True)
+    sh = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    mask = card.split()[-1].point(lambda a: min(a, alpha))
+    blk = Image.new("RGBA", card.size, (30, 26, 20, 255))
+    blk.putalpha(mask)
+    sh.paste(blk, (xy[0] + offset[0], xy[1] + offset[1]), blk)
+    sh = sh.filter(ImageFilter.GaussianBlur(blur))
+    canvas.alpha_composite(sh)
+    canvas.alpha_composite(card.convert("RGBA"), xy)
+
+
+def draw_detail(args):
+    """The object page as a catalogue card."""
+    W, H = 2100, 1155
+    canvas = Image.new("RGBA", (W, H), BONE + (255,))
+
+    with tempfile.TemporaryDirectory() as tmp:
+        paths = extract_images(tmp)
+        src = next((p for p in paths
+                    if os.path.basename(p) == SUBJECT["id"] + ".png"), None)
+        plate_src = Image.open(src).convert("RGB") if src else None
+        if plate_src is None:
+            raise SystemExit("subject image not found in recovered set")
+        iw, ih = plate_src.size
+        c = int(min(iw, ih) * args.crop)
+        swatch = plate_src.crop(((iw - c) // 2, (ih - c) // 2,
+                                 (iw + c) // 2, (ih + c) // 2))
+
+        # --- warm card peeking behind, the reference's layered stack ---
+        back = rounded((430, 560), 10, (196, 104, 66, 255))
+        bd = ImageDraw.Draw(back)
+        f_v = font("mono", 12)
+        tracked(bd, (26, 500), "THE METROPOLITAN MUSEUM OF ART", f_v,
+                (255, 236, 220, 210), 2.2)
+        drop(canvas, back, (742, 96), angle=-2.5)
+
+        # --- the plate: image tipped onto a paper mount ---
+        pw = 520
+        img = plate_src.resize((pw, int(pw * ih / iw)), Image.LANCZOS)
+        mount = rounded((pw + 56, img.size[1] + 104), 8, (252, 251, 248, 255))
+        mount.paste(img, (28, 28))
+        md = ImageDraw.Draw(mount)
+        tracked(md, (28, img.size[1] + 50), SUBJECT["accession"],
+                font("mono", 13), MUTED, 2.2)
+        # No "OPEN ACCESS" here: the stamp on the catalogue card already
+        # says it, and the crop chip overlaps this corner.
+        drop(canvas, mount, (524, 128), angle=1.2, blur=22, alpha=64)
+
+        # --- the crop tile: what you clicked in the grid ---
+        sw = swatch.resize((150, 150), Image.LANCZOS)
+        chip = rounded((174, 208), 8, (247, 245, 240, 255))
+        chip.paste(sw, (12, 12))
+        cd = ImageDraw.Draw(chip)
+        tracked(cd, (12, 172), "THE CROP", font("mono", 10), MUTED, 2.4)
+        drop(canvas, chip, (1006, 636), angle=-5, blur=16, alpha=54)
+
+    # --- catalogue card ---
+    cw, ch = 700, 690
+    card = rounded((cw, ch), 10, (206, 208, 205, 255))
+    d = ImageDraw.Draw(card, "RGBA")
+    f_lbl, f_val = font("mono", 12), font("serif", 23)
+
+    dashed_circle(d, cw - 92, 92, 46, (92, 90, 84, 200))
+    for i, line in enumerate(("CERAMICS", "TILES", "· 446207 ·")):
+        w = tracked_w(d, line, font("mono", 10), 2.0)
+        tracked(d, (cw - 92 - w / 2, 74 + i * 14), line, font("mono", 10),
+                (92, 90, 84, 220), 2.0)
+
+    tracked(d, (44, 62), "1912", font("mono", 13), (120, 118, 112), 3.0)
+
+    y = 168
+    rows = [("OBJECT", SUBJECT["title"]),
+            ("MEDIUM", None),
+            ("PLACE", SUBJECT["place"]),
+            ("DATE", SUBJECT["date"]),
+            ("DEPARTMENT", SUBJECT["department"]),
+            ("CREDIT", SUBJECT["credit"])]
+    for label, val in rows:
+        tracked(d, (44, y), label, f_lbl, (110, 108, 102), 2.6)
+        if label == "MEDIUM":
+            words, line, ly = SUBJECT["medium"].split(), "", y + 22
+            for wd in words:
+                t = (line + " " + wd).strip()
+                if d.textlength(t, font=font("serif", 20)) > cw - 96:
+                    d.text((44, ly), line, font=font("serif", 20), fill=INK)
+                    ly += 27
+                    line = wd
+                else:
+                    line = t
+            d.text((44, ly), line, font=font("serif", 20), fill=INK)
+            y = ly + 46
+        else:
+            d.text((44, y + 20), val, font=f_val, fill=INK)
+            y += 64
+        d.line([44, y - 16, cw - 44, y - 16], fill=(176, 178, 174), width=1)
+
+    for xx in range(30, cw - 30, 8):
+        d.line([xx, ch - 54, xx + 4, ch - 54], fill=(150, 152, 148), width=1)
+    tracked(d, (44, ch - 40), "TEAR HERE FOR THE FULL RECORD",
+            font("mono", 10), (120, 118, 112), 2.2)
+    scissors(d, cw - 60, ch - 54, (120, 118, 112))
+    drop(canvas, card, (1290, 118), angle=-1.2, blur=22, alpha=60)
+
+    # --- three attribute blocks, the reference's info row ---
+    d2 = ImageDraw.Draw(canvas, "RGBA")
+    blocks = [(SUBJECT["familyRGB"], "Palette", SUBJECT["family"].upper(),
+               "dominant glaze family"),
+              (ACCENT, "Material", SUBJECT["type"].upper(),
+               "stonepaste body"),
+              ((60, 58, 54), "Surface", SUBJECT["surface"].upper(),
+               "painted, then glazed")]
+    bx = 524
+    for rgb, head, val, note in blocks:
+        d2.ellipse([bx, 920, bx + 34, 954], fill=rgb)
+        d2.ellipse([bx + 13, 933, bx + 21, 941], fill=(243, 241, 236))
+        d2.text((bx, 980), head, font=font("serif", 25), fill=INK)
+        tracked(d2, (bx, 1022), val, font("mono", 13), INK, 2.2)
+        tracked(d2, (bx, 1046), note, font("mono", 12), MUTED, 1.6)
+        bx += 400
+
+    draw_sidebar(canvas, args.sidebar, H, detail=True)
+    canvas.convert("RGB").save(args.out, quality=95)
+    print(f"\n  wrote {args.out}  ({W}x{H})")
+
+
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--view", choices=("grid", "detail"), default="grid")
     ap.add_argument("--tile", type=int, default=55)
     ap.add_argument("--cols", type=int, default=30)
     ap.add_argument("--rows", type=int, default=21)
@@ -258,6 +430,9 @@ def main():
     ap.add_argument("--crop", type=float, default=0.32)
     ap.add_argument("--out", default=os.path.join(ROOT, "preview.png"))
     args = ap.parse_args()
+
+    if args.view == "detail":
+        return draw_detail(args)
 
     legacy = json.load(open(LEGACY))
     want = args.cols * args.rows
