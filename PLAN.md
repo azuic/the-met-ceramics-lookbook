@@ -478,6 +478,80 @@ buffer in the DOM. Each cell is a div with the atlas as `background-image` and a
 computed `background-position` — 52k cells, ~30 atlas requests, a few hundred
 DOM nodes at a time.
 
+### 7a. The layout wheel — four tessellations
+
+A radial dial with four detents, each selecting a tile tessellation drawn from
+how real tile sample books are laid out:
+
+| Detent | Lattice | `clip-path` |
+|---|---|---|
+| ▭ | **rectangle** — 3:4 portrait, showroom sample strip | none, adjust `background-size` |
+| ■ | **square** — the 2019 grid, the default | none |
+| ◆ | **diamond** — squares set on point, diagonal lattice | `polygon(50% 0, 100% 50%, 50% 100%, 0 50%)` |
+| ⬡ | **hexagon** — offset rows, honeycomb | 6-point `polygon(…)` |
+
+In a *ceramics* lookbook the dial reads as a **potter's wheel**, which is what
+justifies it as a control rather than an ornament. Real tile sample sets are
+laid out exactly these ways, so the feature restates the project's own subject.
+
+**It costs no new assets.** This is the thing that makes it worth doing. Tiles
+stay square in the atlases; every shape is a `clip-path` over the same
+background image. Rectangles are a `background-size`/`background-position`
+change. So the wheel adds **zero bytes** to the 20 MB scroll tier and requires
+no pipeline changes — Stages 3–5 are untouched.
+
+**The architecture already supports it,** because two concerns are separate:
+
+- **`order`** — an index array, produced by the sort (hue-major, material, etc.)
+- **`lattice`** — a pure function `index → {x, y, w, h}`
+
+The wheel swaps `lattice` only. Colour order is untouched, so the hue gradient
+stays continuous through a layout change. A `Lattice` interface needs just
+three things: cell size, a row-offset rule, and `scrollTop → visible index
+range`. All four tessellations are regular lattices, so all four are a few
+lines each. Hexagons use pointy-top with offset rows so row-major
+virtualization still applies (row pitch = 0.75 × hex height).
+
+**Two details that need care:**
+
+1. **Density differs per lattice**, so total scroll height changes when the
+   wheel turns. Preserve the *object* at viewport centre, not the pixel scroll
+   offset — otherwise turning the dial teleports you somewhere unrelated.
+2. **Disable shape at the overview tier.** At 8px swatches a hexagon is a
+   rounding error; the wheel should fade out when fully zoomed out.
+
+### 7b. GSAP — recommendation: no, and one hard condition if yes
+
+GSAP is unusually well matched to the *literal* request. `Draggable` with
+`type: "rotation"`, `snap: [0, 90, 180, 270]` and `inertia: true` is close to a
+one-line spinning dial with momentum and detents. That is a real saving and
+should be acknowledged rather than waved off.
+
+**But the second half of the job argues the other way.** The obvious companion,
+the `Flip` plugin, exists to animate between two layouts whose positions must be
+*measured* from the DOM. Ours do not need measuring — `lattice(index)` returns
+the target position analytically, for both the old and new layout. The morph is
+therefore a straight lerp between two computed points per visible cell, which is
+a few lines inside the render loop we are already writing. Flip would also fight
+the virtualizer, since the set of live elements changes mid-transition and Flip
+assumes stable elements.
+
+So GSAP would earn its place for one control — the dial — which is roughly
+60–80 lines of pointer events, velocity tracking, rAF decay and snap-to-nearest.
+Against that: the project's stated first principle is zero runtime
+dependencies, and its whole premise is surviving a decade untended.
+
+**Recommendation: hand-roll it.** Distance-based stagger, if wanted, is a
+`transition-delay` computed from each cell's distance to the dial — about three
+lines, not a library.
+
+**If GSAP is used anyway, one condition is non-negotiable: vendor the file into
+the repo. Never load it from a CDN.** A `<script src="https://cdn…">` tag is
+precisely the failure that killed the 2019 site — an external host, outside our
+control, that silently stops resolving. A committed, versioned copy has none of
+that risk. The objection to GSAP here is mild; the objection to *CDN-loaded*
+GSAP is the entire point of the rebuild.
+
 ---
 
 ## 8. Repo layout
@@ -510,6 +584,7 @@ Legacy 2019 files (`categorized_ceramics.js`, `grouped_types.js`, `medium.js`,
 2. **Tiles, color, atlases** — stages 3–5, the long unattended run.
 3. **Grid** — virtualized renderer, atlas cells, scroll. Feature parity with 2019.
 4. **Rails** — material + palette, composing filters, scroll-linked state.
+4b. **Layout wheel** — the `Lattice` interface and its four implementations.
 5. **Detail view + deep links.**
 6. **Polish** — reduced-motion, keyboard nav, the cursor, mobile.
 7. **Deploy** — GitHub Pages or Vercel, both pure-static.
