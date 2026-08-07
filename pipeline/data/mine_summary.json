@@ -1,0 +1,35 @@
+{
+  "total": 51913,
+  "by_type": {
+    "terracotta": 22295,
+    "porcelain": 9400,
+    "earthenware": 5767,
+    "ceramic": 3303,
+    "faience": 3129,
+    "clay": 2154,
+    "pottery": 1945,
+    "stoneware": 1554,
+    "fritware": 1266,
+    "other/unspecified": 1100
+  },
+  "by_department": {
+    "Greek and Roman Art": 21621,
+    "European Sculpture and Decorative Arts": 7768,
+    "Asian Art": 6431,
+    "Egyptian Art": 4906,
+    "Islamic Art": 3218,
+    "The American Wing": 2108,
+    "Ancient Near Eastern Art": 2040,
+    "Arts of Africa, Oceania, and the Americas": 1578,
+    "Medieval Art": 1439,
+    "Robert Lehman Collection": 308,
+    "Musical Instruments": 194,
+    "The Cloisters": 138,
+    "Arms and Armor": 112,
+    "Modern and Contemporary Art": 27,
+    "Costume Institute": 22,
+    "Drawings and Prints": 2,
+    "European Paintings": 1
+  },
+  "cap_per_type": 0
+}
