@@ -379,7 +379,25 @@ date, culture, department, `objectURL`. Rate-limited, retried with backoff,
 cached as one JSON per object. ~18k–52k calls; hours, but resumable.
 
 **Stage 3 — `tiles.py`** — download `web-large`, center-crop to square, resize,
-encode WebP. Measured on 12 real objects:
+encode WebP.
+
+> **The 6.3 GB of source imagery is never stored.** Stage 3 streams: fetch one
+> image, crop it, record its colour, discard it. Peak disk is a single image,
+> not 6.3 GB. The durable outputs are the atlases (~90 MB) and the colour data
+> (~1 MB) — everything else is transient by construction.
+>
+> On CI that is the only sane mode, since a runner's disk evaporates when the
+> job ends. Locally, `pipeline/cache/images/` (gitignored) may keep originals
+> so that re-cropping does not mean re-downloading — but see below, that is
+> only worth it for a sample.
+>
+> **Do not casually regenerate the atlases.** Each full regeneration adds
+> ~90 MB to git history *permanently*, and this repo already carries 547 MB of
+> dead weight. Tune the QC thresholds against a local sample first, then
+> produce the atlases once. Getting Stage 3b right before Stage 5 runs is
+> worth real effort.
+
+Measured on 12 real objects:
 
 | Tile | Avg size | × 52,500 | × 18,000 (capped) |
 |---|---:|---:|---:|
