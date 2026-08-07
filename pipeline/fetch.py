@@ -51,9 +51,11 @@ KEEP = (
 
 
 class Backoff:
-    """Long backoff on 403. Imperva bans for minutes, not milliseconds."""
+    """Backoff on 403. Measured: the block clears ~30s after traffic stops,
+    so the first step is 30s rather than a minute -- an over-long first step
+    is pure dead time, and on a throttled runner it dominates the run."""
 
-    STEPS = (60, 120, 300, 600, 900, 1800)
+    STEPS = (30, 60, 120, 300, 600, 900)
 
     def __init__(self):
         self.n = 0
@@ -68,6 +70,46 @@ class Backoff:
 
     def ok(self):
         self.n = 0
+
+
+class Pacer:
+    """Self-tuning request rate.
+
+    A fixed delay is the wrong instrument: too fast and every ~140 requests
+    costs a 30s penalty, too slow and the whole crawl drags. Measured on a
+    GitHub runner, a fixed 0.18s delay spent 4 of 7 minutes asleep and
+    averaged 1.34 req/s, against 3.1 req/s while actually moving.
+
+    So: additive-increase / multiplicative-decrease, like congestion control.
+    Slow down hard when throttled, creep back up when it holds. This finds
+    whatever rate the WAF currently tolerates instead of guessing, and the
+    rate it settles on is reported so the next run can start there.
+    """
+
+    def __init__(self, delay, floor=0.12, ceiling=3.0, recover_after=300):
+        self.delay = delay
+        self.floor = floor
+        self.ceiling = ceiling
+        self.recover_after = recover_after
+        self.streak = 0
+
+    def ok(self):
+        self.streak += 1
+        if self.streak >= self.recover_after:
+            self.streak = 0
+            new = max(self.floor, self.delay * 0.85)
+            if new < self.delay:
+                self.delay = new
+                print(f"    steady -- easing delay to {self.delay:.2f}s "
+                      f"({1/self.delay:.1f}/s)", flush=True)
+
+    def throttled(self):
+        self.streak = 0
+        new = min(self.ceiling, self.delay * 1.7)
+        if new > self.delay:
+            self.delay = new
+            print(f"    throttled -- delay now {self.delay:.2f}s "
+                  f"({1/self.delay:.1f}/s)", flush=True)
 
 
 def seed_from_gz():
@@ -150,7 +192,8 @@ def main():
 
     started = time.time()
     backoff = Backoff()
-    ok = err = 0
+    pacer = Pacer(args.delay)
+    ok = err = throttles = 0
 
     with open(CACHE_FILE, "a", encoding="utf-8") as out:
         for i, oid in enumerate(todo):
@@ -165,10 +208,13 @@ def main():
                     out.write(json.dumps(rec, ensure_ascii=False) + "\n")
                     out.flush()
                     backoff.ok()
+                    pacer.ok()
                     ok += 1
                     break
                 except urllib.error.HTTPError as e:
                     if e.code == 403 or e.code == 429:
+                        throttles += 1
+                        pacer.throttled()
                         backoff.hit()
                         continue
                     if e.code == 404:
@@ -185,9 +231,13 @@ def main():
                 left = (len(todo) - i) / max(rate, 0.01) / 3600
                 print(f"    {i:,}/{len(todo):,}  {rate:.1f}/s  "
                       f"~{left:.1f}h left", flush=True)
-            time.sleep(args.delay)
+            time.sleep(pacer.delay)
 
-    print(f"\n  fetched {ok:,}, errors {err:,}")
+    elapsed = max(time.time() - started, 1)
+    print(f"\n  fetched {ok:,}, errors {err:,}, throttled {throttles}")
+    print(f"  effective {ok/elapsed:.2f} req/s over {elapsed/60:.0f} min")
+    print(f"  settled delay {pacer.delay:.2f}s -- pass "
+          f"--delay {pacer.delay:.2f} next run to start there")
     have = len(load_done())
     print(f"  cache now holds {have:,} of {len(want):,} objects")
     write_gz()
