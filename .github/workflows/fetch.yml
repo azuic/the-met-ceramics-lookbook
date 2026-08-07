@@ -8,11 +8,20 @@ name: Stage 2 — fetch MET metadata
 # file, fetches for up to ~5 hours, writes it back and commits. Re-run until
 # it reports complete.
 #
-# NOTE: `schedule:` only fires for workflows on a repository's DEFAULT branch,
-# which here is `master`. While this lives on `rebuild-2026` it must be
-# started manually from the Actions tab. Two runs finish the ~51.9k objects.
+# `schedule:` only fires for workflows on a repository's DEFAULT branch, and
+# a scheduled run also *executes the copy on that branch*. So this file must
+# stay in sync on both `master` and `rebuild-2026`, and the checkout below
+# forces the working branch explicitly rather than trusting github.ref_name,
+# which would be `master` on a scheduled run.
+#
+# The schedule exists so the crawl finishes itself unattended: each run picks
+# up where the last stopped and no-ops in seconds once complete. REMOVE IT
+# once Stage 2 is done -- there is no reason to keep waking a runner every
+# six hours to discover there is nothing to do.
 
 on:
+  schedule:
+    - cron: "17 */6 * * *"
   workflow_dispatch:
     inputs:
       max_runtime:
@@ -37,7 +46,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          # Never github.ref_name: on a scheduled run that is the default
+          # branch, which does not carry the pipeline.
+          ref: rebuild-2026
 
       - uses: actions/setup-python@v5
         with:
@@ -46,8 +57,8 @@ jobs:
       - name: Fetch
         run: |
           python3 pipeline/fetch.py \
-            --max-runtime "${{ inputs.max_runtime }}" \
-            --delay "${{ inputs.delay }}" \
+            --max-runtime "${{ inputs.max_runtime || '17400' }}" \
+            --delay "${{ inputs.delay || '0.31' }}" \
             | tee fetch.log
 
       - name: Commit progress
@@ -61,7 +72,7 @@ jobs:
             n=$(gzip -cd pipeline/data/api_objects.jsonl.gz | wc -l | tr -d ' ')
             git commit -m "Stage 2: fetched metadata for ${n} objects [skip ci]"
             git pull --rebase --autostash || true
-            git push
+            git push origin HEAD:rebuild-2026
           fi
 
       # Belt and braces: the commit above is the real artefact, this is a
