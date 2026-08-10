@@ -1,6 +1,8 @@
 cache/
 data/candidates.jsonl
 !data/candidates.jsonl.gz
+data/colours.jsonl
+!data/colours.jsonl.gz
 qc_*.png
 *.pyc
 __pycache__/
