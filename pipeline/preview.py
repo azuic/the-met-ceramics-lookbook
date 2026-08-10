@@ -156,15 +156,29 @@ def tile_colour(im):
     return L, math.hypot(a, bb), math.degrees(math.atan2(bb, a)) % 360
 
 
+RECOVERED = os.path.join(HERE, "cache", "recovered")
+
+
 def extract_images(dest):
-    tar = os.path.join(dest, "crops.tar")
-    with open(tar, "wb") as f:
-        subprocess.run(["git", "archive", SOURCE_COMMIT, "resize_crops"],
-                       cwd=ROOT, stdout=f, check=True)
-    subprocess.run(["tar", "-xf", tar, "-C", dest], check=True)
-    d = os.path.join(dest, "resize_crops")
-    return [os.path.join(d, n) for n in sorted(os.listdir(d))
-            if n.endswith(".png")]
+    """Source imagery for the preview.
+
+    These used to be pulled straight out of commit e55fd0a with `git
+    archive`. That stopped working on 2026-08-10, when 547 MB of dead
+    `resize_crops/` blobs were stripped from history -- the commit still
+    exists, its images do not. They were rescued to `cache/recovered/`
+    (gitignored) before the rewrite, and the pre-rewrite history is kept in
+    `met-lookbook-backup-before-rewrite.bundle` if they are ever needed again.
+    """
+    if os.path.isdir(RECOVERED):
+        names = sorted(n for n in os.listdir(RECOVERED)
+                       if n.endswith(".png"))
+        if names:
+            return [os.path.join(RECOVERED, n) for n in names]
+    raise SystemExit(
+        f"no source imagery. Expected {RECOVERED}. Recover it with:\n"
+        f"  git clone met-lookbook-backup-before-rewrite.bundle old && \\\n"
+        f"  cd old && git archive {SOURCE_COMMIT} resize_crops | "
+        f"tar -x -C {RECOVERED} --strip-components=1")
 
 
 # --- floating modules --------------------------------------------------------
