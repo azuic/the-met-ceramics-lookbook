@@ -12,7 +12,7 @@ expire. See `../PLAN.md` for the reasoning.
 | gate — validate the rules | `validate.py` | **passing** |
 | 2 — fetch image URLs + metadata | `fetch.py` | **done** — 51,521 usable |
 | 3 — crop and resize tiles | `tiles.py` | not started |
-| 3b — crop quality control | `qc.py` | not started |
+| 3b — crop quality control | `qc.py` | **tuned** — 6.4% reject, 16.4% mono |
 | 4 — extract colour | `color.py` | not started |
 | 5 — pack atlases | `atlas.py` | not started |
 | 6 — emit site data | `emit.py` | not started |

@@ -255,6 +255,35 @@ grey squares.
 **Excluded — but for the right reason.** Not "it isn't ceramic," because it
 arguably is. It is excluded because its photography yields no colour.
 
+### 4e. Roughly a sixth of the imagery has no colour at all
+
+Found while tuning Stage 3b on a stratified sample of 890 real images.
+
+**16.4% of MET ceramic photographs are black-and-white archival record
+shots.** Not grey objects — greyscale film. The 5th percentile of whole-image
+chroma is exactly `0.000`. Extrapolated across the collection that is roughly
+**8,400 objects with no colour record whatsoever**, and at least one is a
+placeholder card reading *"CONSULT PRIMARY RECORD"* rather than a photograph
+of anything.
+
+For a project whose entire subject is colour this is not a rounding error.
+Colour-sorting a black-and-white photograph sorts it by **film exposure**, not
+by glaze. Left untreated these objects would silently pile into the
+achromatic band and be read by a viewer as "grey-glazed ceramics", which is
+simply false.
+
+Detection keys on the **95th percentile of whole-image chroma**, not the mean.
+A genuinely white porcelain bowl shot in colour still has *some* coloured
+pixels — backdrop cast, shadow, a label — while a greyscale scan has
+literally none. The mean cannot separate those; the p95 does, cleanly.
+
+**Proposed treatment — flag, exclude from colour sort, offer as its own
+filter.** They stay in the dataset tagged `mono: true`, are excluded from the
+hue-sorted grid by default, and become a browsable category of their own. That
+is honest, and it is also genuinely interesting: "the part of the collection
+the museum has never photographed in colour" is a real fact about the archive
+rather than a defect to hide. **This one is a judgement call and it is yours.**
+
 ### 4c. The general lesson: crop quality control (new Stage 3b)
 
 Steatite is the extreme case of a problem that affects the whole dataset. Any
@@ -445,6 +474,14 @@ on retina, and 31 MB capped is nothing to commit.
 > saliency-based crop was considered and rejected: dead-center is what produced
 > the flat, swatch-like texture field in the original, and chasing "interesting"
 > regions would break that evenness.
+
+> **Tuned 2026-08-10** on 890 stratified real images. Crop ladder
+> `0.32 → 0.24 → 0.17`, reject above **40%** backdrop. The first attempt used
+> a 60% threshold, which was so slack the ladder never engaged at all — 864 of
+> 865 crops passed at the first rung. At 40% the ladder does its job and
+> rejection lands at **6.4%**, concentrated exactly where it should be:
+> Beads 50%, magical figurines 67%, sherds and fragments ~9%, while bowls,
+> jars and vases sit at 3-4%.
 
 **Stage 4 — `color.py`** — per tile, compute:
 - average color in **OKLab** (perceptually uniform; averaging in sRGB muddies)
