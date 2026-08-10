@@ -212,7 +212,7 @@ def main():
     started = time.time()
     backoff = Backoff()
     pacer = Pacer(args.delay)
-    ok = err = throttles = 0
+    ok = err = throttles = gone = 0
 
     with open(CACHE_FILE, "a", encoding="utf-8") as out:
         for i, oid in enumerate(todo):
@@ -237,7 +237,17 @@ def main():
                         backoff.hit()
                         continue
                     if e.code == 404:
-                        err += 1
+                        # The object is in the CSV but the API no longer
+                        # serves it -- deaccessioned, merged or renumbered
+                        # since the snapshot. Record a tombstone so later
+                        # runs stop retrying it forever; without this the
+                        # crawl never reports complete and a scheduled
+                        # workflow burns a runner every six hours re-asking
+                        # the same dead IDs.
+                        out.write(json.dumps({"objectID": int(oid),
+                                              "gone": True}) + "\n")
+                        out.flush()
+                        gone += 1
                         break
                     backoff.hit()
                     continue
@@ -253,7 +263,8 @@ def main():
             time.sleep(pacer.delay)
 
     elapsed = max(time.time() - started, 1)
-    print(f"\n  fetched {ok:,}, errors {err:,}, throttled {throttles}")
+    print(f"\n  fetched {ok:,}, gone {gone:,}, errors {err:,}, "
+          f"throttled {throttles}")
     print(f"  effective {ok/elapsed:.2f} req/s over {elapsed/60:.0f} min")
     print(f"  settled delay {pacer.delay:.2f}s -- pass "
           f"--delay {pacer.delay:.2f} next run to start there")
@@ -262,6 +273,8 @@ def main():
     write_gz()
     if have < len(want):
         print(f"  INCOMPLETE -- {len(want)-have:,} remain; re-run to resume")
+    else:
+        print("  STAGE 2 COMPLETE")
     return 0
 
 

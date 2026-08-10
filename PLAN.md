@@ -374,9 +374,31 @@ insurance policy.
 **Stage 1 — `mine.py`** — stream the 317 MB CSV, apply the heuristic, emit
 candidate IDs + metadata. Never stores the CSV. ~2 min.
 
-**Stage 2 — `fetch.py`** — MET API per object for `primaryImageSmall`, title,
-date, culture, department, `objectURL`. Rate-limited, retried with backoff,
-cached as one JSON per object. ~18k–52k calls; hours, but resumable.
+**Stage 2 — `fetch.py`** — **DONE, 2026-08-10.** MET API per object for
+`primaryImageSmall`, title, date, culture, department, `objectURL`.
+
+| | count |
+|---|---:|
+| candidates from stage 1 | 51,913 |
+| gone — API returns 404 | 270 |
+| fetched but no public image | 122 |
+| **usable, with imagery** | **51,521** (99.2%) |
+
+**51,521 is the real headline number, not 51,913.** The grid can only show
+objects that have imagery, so the candidate count overstates it. Everything
+user-facing should quote the usable figure.
+
+Two lessons worth keeping. The API sits behind Imperva: concurrency 8 returns
+403 on every request, and the apparent throughput at that setting is fast
+rejections rather than data. `fetch.py` is serial with self-tuning
+additive-increase/multiplicative-decrease pacing, which cut throttling from 4
+events in 7 minutes to 1 in 13.
+
+And **a 404 must be recorded, not merely counted as an error.** The first
+version skipped them silently, so each of 20 scheduled runs re-asked the same
+270 dead IDs, the crawl never reported complete, and the schedule burned
+runners for two days. They are now tombstoned as `{"objectID": …,
+"gone": true}`.
 
 **Stage 3 — `tiles.py`** — download `web-large`, crop **a tight central
 fraction** of the frame, resize, encode WebP.

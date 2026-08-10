@@ -14,14 +14,12 @@ name: Stage 2 — fetch MET metadata
 # forces the working branch explicitly rather than trusting github.ref_name,
 # which would be `master` on a scheduled run.
 #
-# The schedule exists so the crawl finishes itself unattended: each run picks
-# up where the last stopped and no-ops in seconds once complete. REMOVE IT
-# once Stage 2 is done -- there is no reason to keep waking a runner every
-# six hours to discover there is nothing to do.
+# The 6-hourly schedule has been REMOVED: stage 2 completed on 2026-08-10 and
+# there is no reason to keep waking a runner to discover there is nothing to
+# do. Re-add `schedule:` only if the candidate set is regenerated and a fresh
+# crawl is needed.
 
 on:
-  schedule:
-    - cron: "17 */6 * * *"
   workflow_dispatch:
     inputs:
       max_runtime:

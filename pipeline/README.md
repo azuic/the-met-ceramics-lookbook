@@ -10,7 +10,7 @@ expire. See `../PLAN.md` for the reasoning.
 |---|---|---|
 | 1 — mine the CSV | `mine.py` | **done** |
 | gate — validate the rules | `validate.py` | **passing** |
-| 2 — fetch image URLs + metadata | `fetch.py` | **ready** — run locally or via CI |
+| 2 — fetch image URLs + metadata | `fetch.py` | **done** — 51,521 usable |
 | 3 — crop and resize tiles | `tiles.py` | not started |
 | 3b — crop quality control | `qc.py` | not started |
 | 4 — extract colour | `color.py` | not started |
@@ -87,8 +87,23 @@ The adaptive pacer settles around **0.31s** (~3.2 req/s attempted, ~1.7 req/s
 sustained once latency is counted). Request latency is now roughly equal to
 the delay, so the remaining ceiling is round-trip time, not the WAF.
 
-Full crawl is ~8 hours, i.e. two runs. Start a later run with `--delay 0.31`
-so it does not rediscover the rate from scratch.
+Full crawl took ~8 hours of runner time spread over 20 scheduled runs,
+finishing 2026-08-10.
+
+**Outcome**
+
+| | count |
+|---|---:|
+| candidates from stage 1 | 51,913 |
+| gone — API returns 404 | 270 |
+| fetched but no public image | 122 |
+| **usable, with imagery** | **51,521** (99.2%) |
+
+The 270 are in the CSV but the API no longer serves them: deaccessioned,
+merged or renumbered since the snapshot. They are recorded as tombstones
+(`{"objectID": …, "gone": true}`) so re-runs stop retrying them — without
+that the crawl never reports complete and a scheduled workflow re-asks the
+same dead IDs forever, which is exactly what happened for two days.
 
 Note that a local run writes `data/api_objects.jsonl.gz` too, so if CI has
 committed since, discard the local copy (`git checkout --`) before pulling —

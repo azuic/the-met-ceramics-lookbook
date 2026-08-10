@@ -235,6 +235,26 @@ def centred(d, cx, y, text, f, fill, track=0.0):
         d.text((cx - w / 2, y), text, font=f, fill=fill)
 
 
+def usable_total():
+    """Objects that actually have imagery -- the honest headline number.
+
+    Not the stage 1 candidate count: 270 of those 404 out of the API and 122
+    have no public image, so 51,913 would overstate what the grid can show.
+    """
+    gz = os.path.join(HERE, "data", "api_objects.jsonl.gz")
+    try:
+        import gzip as _gz
+        n = 0
+        with _gz.open(gz, "rt") as f:
+            for line in f:
+                d = json.loads(line)
+                if d.get("primaryImageSmall"):
+                    n += 1
+        return n
+    except Exception:
+        return 0
+
+
 def load_counts():
     """Real per-material counts from stage 1, never invented."""
     try:
@@ -252,7 +272,7 @@ def draw_float_chrome(canvas, W, H):
               blooms=[((42, 157, 163), .78, .28, .62, 120)])
     d.text((122, 106), "Ceramic", font=font("display", 44), fill=INK)
     d.text((124, 154), "Lookbook", font=font("display-italic", 44), fill=INK)
-    total = sum(load_counts().values()) or 51913
+    total = usable_total() or sum(load_counts().values())
     tracked(d, (122, 222), f"{total:,} OBJECTS  ·  OPEN ACCESS",
             font("mono", 12), (108, 106, 100), 2.0)
     tracked(d, (122, 246), "THE METROPOLITAN MUSEUM OF ART", font("mono", 12),
