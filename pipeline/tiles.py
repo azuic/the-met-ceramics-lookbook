@@ -34,11 +34,20 @@ import urllib.request
 
 from PIL import Image, ImageFile
 
-# Some MET images are served with a Content-Length the CDN cannot deliver --
-# the response is a genuinely truncated JPEG, not a throttle, and retrying
-# returns the same short read forever. Decoding what did arrive recovers the
-# object, but only when the undecoded tail stays clear of the crop; see
-# decode_partial().
+# A short read is almost always LOCAL, not the MET.
+#
+# This was originally recorded as a CDN defect -- "served with a Content-Length
+# the CDN cannot deliver, and retrying returns the same short read forever".
+# That was wrong, and it cost a re-fetch to find out. The truncation comes from
+# the network path in between: run inside a sandboxed/proxied environment the
+# same URL failed ~60% of the time, one request per second, cutting off at
+# buffer boundaries like exactly 16,384 bytes; run outside it, the identical
+# URL returned all 37,520 bytes 8 times out of 8, and a full fetch of the
+# collection errored at 0.1% -- all genuine 404s, no truncation at all.
+#
+# So: if truncation shows up in bulk, suspect the local network before writing
+# it into the dataset. The salvage below stays as a last resort, but it is a
+# safety net, not the expected path.
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -204,11 +213,15 @@ def load_targets():
     return out
 
 
+RETRIES = 4
+
+
 def process(job):
     oid, url, _ = job
     req = urllib.request.Request(encode_url(url), headers={"User-Agent": UA})
     im = err = None
-    for attempt in range(3):
+    for attempt in range(RETRIES):
+        last = attempt == RETRIES - 1
         try:
             with urllib.request.urlopen(req, timeout=45) as r:
                 raw = r.read()
@@ -217,7 +230,16 @@ def process(job):
         except Exception as e:
             err = type(e).__name__
             partial = getattr(e, "partial", None)
-            if partial:                        # short read: salvage if usable
+
+            # Retry a short read; keep the salvage for the last attempt.
+            #
+            # An earlier version salvaged immediately and never retried at all,
+            # on the strength of the note corrected at the top of this file.
+            # Retrying does work: on a URL truncating ~60% of the time, four
+            # attempts get the whole file. Salvage is the last resort, so a
+            # partial image only enters the dataset when the network refused
+            # the same object four times running.
+            if partial and last:
                 try:
                     im = decode_partial(partial)
                 except Exception:
@@ -225,8 +247,10 @@ def process(job):
                 if im is not None:
                     break
                 err = "TruncatedPastCrop"
-                break                          # retrying returns the same bytes
-            time.sleep(1.5 * (attempt + 1))    # CDN throttle, not a dead file
+            if not last:
+                # Back off harder on truncation than on a plain failure: it is
+                # a load signal, and the polite response is to slow down.
+                time.sleep((3.0 if partial else 1.5) * (attempt + 1))
     if im is None:
         return oid, {"id": oid, "error": err}
 
