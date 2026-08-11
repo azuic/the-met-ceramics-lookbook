@@ -8,12 +8,14 @@ Joins the three pipeline artefacts into the files the lookbook actually loads:
 
 Inputs (either plain or .gz, whichever is present):
 
-    data/colours.jsonl    stage 3 -- crop QC + OKLab colour
+    data/colours.jsonl    stage 3 -- crop QC, mono flag
+    data/families.json    stage 4 -- the signature colour of every tile
     data/candidates.jsonl stage 1 -- classification, department, material
     data/api_objects.jsonl stage 2 -- title, date, image URL
 
 Only objects that passed crop QC *and* carry colour reach the grid. Run:
 
+    python3 pipeline/color.py measure && python3 pipeline/color.py families
     python3 pipeline/emit.py
 """
 
@@ -25,6 +27,10 @@ import struct
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from color import (CHROMA_MIN, family as family_name,  # noqa: E402
+                   load_lustre)
+
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "pipeline" / "data"
 OUT = ROOT / "data"
@@ -32,7 +38,9 @@ OUT = ROOT / "data"
 # --- palette ---------------------------------------------------------------
 # Ten families, named in ceramic vocabulary rather than in generic hue buckets.
 # The hex is the family's representative swatch (the palette ring and the
-# detail card draw it); the boundaries below are what actually assign objects.
+# detail card draw it). This ORDER is the client contract -- grid.bin's `fam`
+# column indexes into it -- so it is presentation, kept here. Which family an
+# object lands in is decided in color.py.
 FAMILIES = [
     ("cobalt", "#263A8C"),
     ("turquoise", "#2A9DA3"),
@@ -45,7 +53,6 @@ FAMILIES = [
     ("cream", "#E2D8C2"),
     ("manganese", "#3A3034"),
 ]
-CO, TU, CE, CG, TE, IR, OC, LU, CR, MA = range(10)
 
 # Surface phrasing per family, used by the detail card when the museum's own
 # medium string says nothing about the glaze.
@@ -63,43 +70,20 @@ SURFACES = [
 ]
 
 
-def family(L: float, C: float, h: float) -> int:
-    """Assign an OKLCh colour to a glaze family.
-
-    Boundaries are tuned against this collection's own histogram, not fixed a
-    priori: the warm 40-100 degree band carries 58% of the objects, so it is
-    split on lightness and chroma as well as hue. The result leaves no family
-    below 2% or above 28%.
-    """
-    # Below this chroma the hue angle is photographic noise, so lightness --
-    # not hue -- decides. This is the buff/grey body of the collection.
-    if C < 0.018:
-        return CR if L >= 0.58 else MA
-    if h >= 300 or h < 15:
-        return MA if (L < 0.42 and C < 0.055) else (IR if L < 0.55 else TE)
-    if h < 40:
-        return IR if L < 0.54 else TE
-    # The orange body band -- the collection's centre of mass.
-    if h < 56:
-        if L < 0.46:
-            return IR
-        if C < 0.038 and L >= 0.68:
-            return CR
-        return TE
-    # Amber and yellow-brown; the dark half of it reads as lustre.
-    if h < 100:
-        if C < 0.040 and L >= 0.68:
-            return CR
-        return LU if L < 0.50 else OC
-    if h < 135:
-        if L >= 0.58 and C < 0.055:
-            return CE
-        return OC if C < 0.045 else CG
-    if h < 195:
-        return CE if (L >= 0.55 and C < 0.060) else CG
-    if h < 240:
-        return TU
-    return CO
+# Family boundaries live in color.py, applied to the tile's SIGNATURE colour.
+# They used to live here, applied to the mean of a 24x24 downsample -- which is
+# the colour of nothing. tiles.py's own docstring says why: "a mean muddies a
+# two-tone tile -- cobalt on white averages to pale grey, which belongs to
+# neither family", and then this file averaged anyway. On famille rose, faience
+# and blue-and-white -- the collection's most decorated wares -- the mean is
+# the pale ground, so they measured as colourless and dropped out of the colour
+# navigation entirely.
+#
+# color.py takes the most chromatic cluster that still holds real area instead,
+# and its boundaries are tuned against THAT distribution. The two are a matched
+# pair: feeding signature colours into the old mean-tuned cut points would
+# misfile them just as badly in the other direction.
+FAMILY_INDEX = {name: i for i, (name, _) in enumerate(FAMILIES)}
 
 
 # --- material and department vocabularies ----------------------------------
@@ -153,14 +137,26 @@ def main() -> None:
     print("stage 6 -- emit")
 
     # Colour is the gate: an object without a QC-passing colour crop is not in
-    # the grid at all, because the grid has nothing to draw for it.
-    colours = {}
-    seen = 0
-    for d in read_jsonl("colours"):
-        seen += 1
-        if d.get("ok") and "L" in d:
-            colours[d["id"]] = d
+    # the grid at all, because the grid has nothing to draw for it. The gate is
+    # families.json rather than colours.jsonl, because a tile that stage 4
+    # could not read has no colour to draw whatever stage 3 recorded.
+    fam_path = DATA / "families.json"
+    if not fam_path.exists():
+        sys.exit("emit: missing pipeline/data/families.json -- run\n"
+                 "  python3 pipeline/color.py measure\n"
+                 "  python3 pipeline/color.py families")
+    tiles = json.loads(fam_path.read_text())["tiles"]
+
+    # Unique ids, not lines: a retry appends a second record for the same
+    # object, so colours.jsonl is last-wins and longer than the collection.
+    seen = len({d["id"] for d in read_jsonl("colours")})
+    colours = tiles
     print(f"  {len(colours):,} of {seen:,} objects passed crop QC with colour")
+
+    # Lustre is a finish claimed from the medium string, not a hue, so the
+    # family call needs to know which objects carry one.
+    lustre = load_lustre()
+    print(f"  {len(lustre):,} objects carry a lustre finish in their medium")
 
     cands = {d["id"]: d for d in read_jsonl("candidates") if d["id"] in colours}
     api = {}
@@ -179,10 +175,11 @@ def main() -> None:
     # sheets packed in this same order are contiguous on screen, so a screenful
     # of the default view pulls one or two sheets instead of twenty. The other
     # sorts are still derived from these columns client-side.
+    fam_of = {i: FAMILY_INDEX[family_name(
+        colours[i]["L"], colours[i]["C"], colours[i]["h"], i in lustre)]
+        for i in colours}
     ids = sorted(colours, key=lambda i: (
-        family(colours[i]["L"], colours[i]["C"], colours[i]["h"]),
-        colours[i]["h"],
-        colours[i]["L"],
+        fam_of[i], colours[i]["h"], colours[i]["L"],
     ))
     n = len(ids)
 
@@ -211,15 +208,18 @@ def main() -> None:
         rec = api.get(oid, {})
 
         L, C, h = float(col["L"]), float(col["C"]), float(col["h"])
-        fam = family(L, C, h)
+        fam = fam_of[oid]
 
         # Stage 3 decides "monochrome" from the 95th percentile of the whole
         # photograph's chroma, so a small coloured object on a large grey
-        # backdrop reads as greyscale. Six of 6,815 do. The crop is what the
-        # grid actually draws, so the crop's own chroma has the last word: if
-        # it is plainly coloured, the photograph was not black and white.
-        mono = 1 if col.get("mono") else 0
-        if mono and C >= 0.018:
+        # backdrop reads as greyscale. The crop is what the grid actually
+        # draws, so the crop's own chroma has the last word: if it is plainly
+        # coloured, the photograph was not black and white. The threshold is
+        # color.py's CHROMA_MIN, the same line that separates a colour from a
+        # neutral everywhere else -- the old 0.018 was a second, softer
+        # definition of "has colour" sitting one file away from the real one.
+        mono = 1 if col.get("m") else 0
+        if mono and C >= CHROMA_MIN:
             mono = 0
             mono_rescued += 1
         r, g, b = (col.get("rgb") or [128, 128, 128])[:3]

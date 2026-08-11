@@ -29,9 +29,17 @@ import math
 import os
 import sys
 import time
+import urllib.parse
 import urllib.request
 
-from PIL import Image
+from PIL import Image, ImageFile
+
+# Some MET images are served with a Content-Length the CDN cannot deliver --
+# the response is a genuinely truncated JPEG, not a throttle, and retrying
+# returns the same short read forever. Decoding what did arrive recovers the
+# object, but only when the undecoded tail stays clear of the crop; see
+# decode_partial().
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from qc import (crop_with_qc, is_monochrome, oklab,  # noqa: E402
@@ -54,6 +62,49 @@ UA = ("the-met-ceramics-lookbook/1.0 "
 # history does. 96px it is.
 SIZES = (96, 40)            # grid tier, fast-scroll tier
 WEBP_Q = 64
+
+
+def encode_url(u):
+    """Percent-encode the path so exotic filenames survive urlopen().
+
+    173 of the MET's image filenames contain a literal space ("RRP Table
+    68.207 Ret.jpg") or an en-dash ("61_200_13a-c_O1_sf.jpg", with U+2013).
+    urlopen rejects the first as InvalidURL and the second as
+    UnicodeEncodeError. Both files exist and fetch fine once quoted.
+    """
+    p = urllib.parse.urlsplit(u)
+    return urllib.parse.urlunsplit(
+        (p.scheme, p.netloc, urllib.parse.quote(p.path, safe="/%"),
+         p.query, p.fragment))
+
+
+def flat_tail(im, step=17):
+    """Rows at the bottom that decoded to a uniform fill, i.e. never arrived."""
+    w, h = im.size
+    px = im.load()
+    n = 0
+    for y in range(h - 1, -1, -1):
+        if len({px[x, y] for x in range(0, w, step)}) > 2:
+            break
+        n += 1
+    return n
+
+
+def decode_partial(raw, ladder_top=CROP_LADDER[0]):
+    """Decode a truncated JPEG, but only if the crop lands on real pixels.
+
+    PIL fills the undecoded tail with flat grey. That grey reads as studio
+    backdrop, so a half-decoded frame would sail through quality control and
+    put a blank slab in the grid. Accept the salvage only when the fill stays
+    entirely below the widest crop the ladder can take.
+    """
+    im = Image.open(io.BytesIO(raw)).convert("RGB")
+    w, h = im.size
+    tail = flat_tail(im)
+    if not tail:
+        return im
+    crop_bottom = (h + int(min(w, h) * ladder_top)) // 2
+    return im if crop_bottom <= h - tail else None
 
 
 def dominant(im, k=5):
@@ -93,16 +144,44 @@ def measure(crop):
     }
 
 
-def load_done():
-    done = set()
+def load_done(require_tiles=False):
+    """IDs already measured.
+
+    Error records deliberately do NOT count as done, so re-running retries
+    them -- a timeout is a fact about the network that evening, not about the
+    object. A retry that succeeds appends a second record for the same ID, so
+    everything downstream must read this file LAST-WINS.
+
+    With require_tiles, an accepted object whose tile files are missing is not
+    done either. The measurement log and the tile cache are separate artefacts
+    and CAN diverge: colours.jsonl is committed, cache/ is gitignored, so an
+    ordinary git operation can destroy every tile while the log survives
+    intact. Without this the pipeline reports STAGE 3 COMPLETE over an empty
+    cache and stage 5 packs 44,357 blank squares.
+    """
+    last = {}
     if os.path.exists(COLOURS):
         with open(COLOURS) as f:
             for line in f:
                 try:
-                    done.add(json.loads(line)["id"])
+                    r = json.loads(line)
                 except Exception:
                     continue
-    return done
+                last[r["id"]] = r
+
+    done = {oid for oid, r in last.items() if "error" not in r}
+    if not require_tiles:
+        return done
+
+    # Only objects that PASSED QC are expected on disk -- a rejected one
+    # legitimately has no tile, so absence proves nothing about it.
+    return {oid for oid in done
+            if not last[oid].get("ok") or has_tiles(oid)}
+
+
+def has_tiles(oid):
+    return all(os.path.exists(os.path.join(TILES, str(s), f"{oid}.webp"))
+               for s in SIZES)
 
 
 def load_targets():
@@ -127,13 +206,29 @@ def load_targets():
 
 def process(job):
     oid, url, _ = job
-    try:
-        req = urllib.request.Request(url, headers={"User-Agent": UA})
-        with urllib.request.urlopen(req, timeout=45) as r:
-            raw = r.read()
-        im = Image.open(io.BytesIO(raw)).convert("RGB")
-    except Exception as e:
-        return oid, {"id": oid, "error": type(e).__name__}
+    req = urllib.request.Request(encode_url(url), headers={"User-Agent": UA})
+    im = err = None
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(req, timeout=45) as r:
+                raw = r.read()
+            im = Image.open(io.BytesIO(raw)).convert("RGB")
+            break
+        except Exception as e:
+            err = type(e).__name__
+            partial = getattr(e, "partial", None)
+            if partial:                        # short read: salvage if usable
+                try:
+                    im = decode_partial(partial)
+                except Exception:
+                    im = None
+                if im is not None:
+                    break
+                err = "TruncatedPastCrop"
+                break                          # retrying returns the same bytes
+            time.sleep(1.5 * (attempt + 1))    # CDN throttle, not a dead file
+    if im is None:
+        return oid, {"id": oid, "error": err}
 
     crop, frac, bd, ok, mono = crop_with_qc(im)
     rec = {"id": oid, "crop": frac, "backdrop": round(bd, 3),
@@ -155,16 +250,22 @@ def main():
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--concurrency", type=int, default=8)
     ap.add_argument("--max-runtime", type=float, default=0)
+    ap.add_argument("--heal", action="store_true",
+                    help="also re-fetch accepted objects whose tiles are "
+                         "missing from the cache")
     args = ap.parse_args()
 
     os.makedirs(DATA, exist_ok=True)
     os.makedirs(TILES, exist_ok=True)
 
     targets = load_targets()
-    done = load_done()
+    done = load_done(require_tiles=args.heal)
     todo = [t for t in targets if t[0] not in done]
     print(f"  {len(targets):,} objects with imagery, {len(done):,} done, "
           f"{len(todo):,} to go")
+    if args.heal:
+        gaps = len(load_done()) - len(done)
+        print(f"  --heal: {gaps:,} of those are measured but untiled")
     if args.limit:
         todo = todo[:args.limit]
     if not todo:

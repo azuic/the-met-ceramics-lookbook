@@ -1,8 +1,18 @@
-cache/
+# No trailing slash: `cache/` matches only a directory, so when a worktree
+# symlinked `cache` at the main checkout's tile store, the SYMLINK was not
+# ignored and got committed. Checking that branch out in the main worktree
+# then pointed the link at itself and git deleted 44,357 downloaded tiles to
+# make room for it. Match the name, not just the directory.
+cache
 data/candidates.jsonl
 !data/candidates.jsonl.gz
 data/colours.jsonl
 !data/colours.jsonl.gz
+# Stage 4/5 intermediates. Both rebuild from the tiles in seconds, and the
+# site consumes data/grid.bin from stage 6, not these.
+data/palette.jsonl
+data/families.json
+data/atlas.json
 qc_*.png
 *.pyc
 __pycache__/
