@@ -34,8 +34,11 @@ const Tear = (() => {
    * has alpha cuts it off mid-falloff and leaves a faint hard-edged rectangle
    * on the frosted backdrop. Past the falloff there is nothing left to cut. */
   const OUT = 150;
-  const MAXA = 26;  // degrees of swing once it hangs by the corner alone
-  const PULL = 62;  // pixels of drag from joined to hanging
+  const MAXA = 26;  // degrees of sag once it hangs by the corner alone
+  const PULL = 120; // pixels of travel along the seam from joined to hanging.
+                    // Sideways travel is cheaper than the old downward pull —
+                    // the hand is already moving that way — so this is longer
+                    // than it was, to keep the commit at a deliberate ~57px
   const GO = 0.42;  // past this much it is committed and lets go
 
   const slow = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -300,8 +303,14 @@ const Tear = (() => {
       });
     }
 
+    /* The gesture runs along the perforation, not away from it: you sweep
+     * across the seam the way a thumb does, left to right, and the split
+     * follows under it. What sags is the paper behind the split, which is
+     * hanging off the last corner by then and has nothing holding it up —
+     * so the piece still goes down while the hand goes sideways. */
+    let from = 0;
     const drag = Draggable.create(proxy, {
-      type: 'y',
+      type: 'x',
       trigger: stub,
       cursor: 'grab',
       activeCursor: 'grabbing',
@@ -311,11 +320,13 @@ const Tear = (() => {
         if (flying || !enabled()) return;
         measure();
         gsap.killTweensOf(stub);
-        gsap.set(proxy, { y: 0 });
+        // Measure from wherever the proxy happens to sit rather than moving it
+        // back to zero, which would desynchronise Draggable's own bookkeeping.
+        from = this.x;
       },
       onDrag() {
         if (flying || !enabled()) return;
-        setP(Math.pow(Math.max(0, this.y) / PULL, 1.15));
+        setP(Math.pow(Math.max(0, this.x - from) / PULL, 1.15));
       },
       onDragEnd() {
         if (flying || !enabled()) return;
