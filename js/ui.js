@@ -220,8 +220,10 @@ const UI = (() => {
     // The arc runs along the inside of the glaze band, from where the viewport
     // starts to where it ends. A floor keeps it visible when the collection is
     // long enough that the true slice would be a couple of pixels.
-    const C = 2 * Math.PI * 83;
-    const len = Math.max(0.025, Math.min(1, S.scrollSpan)) * C;
+    const C = 2 * Math.PI * 87;
+    // The floor is what makes it read as an arc rather than a straight nub:
+    // 6% subtends about 22 degrees, enough for the curve to be visible.
+    const len = Math.max(0.06, Math.min(1, S.scrollSpan)) * C;
     n.ringArc.style.strokeDasharray = len.toFixed(2) + ' ' + (C - len).toFixed(2);
     n.ringArc.style.strokeDashoffset = (-S.scrollStart * C).toFixed(2);
     n.wheelWrap.classList.toggle('faded', S.overview);

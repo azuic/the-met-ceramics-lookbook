@@ -205,11 +205,12 @@ a:hover { color: #C05A38; }
   position: absolute;
   inset: 0;
   box-sizing: border-box;
-  /* 26px meets the dial's own 148px face exactly, so the paper reads as one
-     surface instead of leaving a band of the field showing between them. */
-  border: 26px solid #FAF8F3;
+  /* 20px leaves the paper ring clear of the dial's 148px face, so the two read
+     as separate objects with the field showing between them. Hairlines on both
+     edges keep that gap looking deliberate. */
+  border: 20px solid #FAF8F3;
   border-radius: 50%;
-  box-shadow: 0 10px 26px rgba(38, 38, 35, 0.12), 0 0 0 1px #E4E0D7;
+  box-shadow: 0 10px 26px rgba(38, 38, 35, 0.12), 0 0 0 1px #E4E0D7, inset 0 0 0 1px #E4E0D7;
   touch-action: none;
 }
 #glazeRing {
@@ -217,8 +218,9 @@ a:hover { color: #C05A38; }
   inset: 0;
   border-radius: 50%;
   pointer-events: none;
-  -webkit-mask: radial-gradient(circle farthest-side, transparent 87%, #000 88%, #000 94%, transparent 95%);
-  mask: radial-gradient(circle farthest-side, transparent 87%, #000 88%, #000 94%, transparent 95%);
+  /* A 4px band riding near the outer edge of the paper, not filling it. */
+  -webkit-mask: radial-gradient(circle farthest-side, transparent 92.5%, #000 93%, #000 97%, transparent 97.5%);
+  mask: radial-gradient(circle farthest-side, transparent 92.5%, #000 93%, #000 97%, transparent 97.5%);
 }
 #ringArc {
   position: absolute;
