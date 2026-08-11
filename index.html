@@ -50,8 +50,13 @@
     <!-- The potter's wheel: four detents, four tessellations. The ring around
          it is the palette, and doubles as the scrollbar. -->
     <div data-mod="1" id="wheelWrap">
+      <div id="ringBase"></div>
       <div id="glazeRing"></div>
-      <div id="ringThumb"></div>
+      <!-- The indicator is an arc, not a dot: a viewport covers a range of the
+           collection, and at this zoom that range is a visible slice of it. -->
+      <svg id="ringArc" viewBox="0 0 200 200" aria-hidden="true">
+        <circle id="ringArcPath" cx="100" cy="100" r="83" transform="rotate(-90 100 100)"></circle>
+      </svg>
       <div id="wheelHit" style="position:absolute;left:26px;top:26px;width:148px;height:148px;touch-action:none">
         <div id="wheelRing">
           <div id="glyphs"></div>
@@ -90,9 +95,15 @@
   </div>
 
   <div id="detail" hidden>
-    <div id="detailClose" style="position:fixed;top:26px;right:34px;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#262623;z-index:5;padding:8px">Close &#10005;</div>
-    <div id="detailPrev" style="position:fixed;left:20px;top:50%;transform:translateY(-50%);font-family:'Libre Baskerville',serif;font-size:26px;color:#928F86;z-index:5;padding:12px">&#8592;</div>
-    <div id="detailNext" style="position:fixed;right:20px;top:50%;transform:translateY(-50%);font-family:'Libre Baskerville',serif;font-size:26px;color:#928F86;z-index:5;padding:12px">&#8594;</div>
+    <div id="detailClose" class="key" style="position:fixed;top:26px;right:34px;z-index:5">esc</div>
+    <div id="detailPrev" class="key key--nav" style="position:fixed;left:28px;top:50%;transform:translateY(-50%);z-index:5">&#8592;</div>
+    <div id="detailNext" class="key key--nav" style="position:fixed;right:28px;top:50%;transform:translateY(-50%);z-index:5">&#8594;</div>
+    <div id="detailHint">
+      <span class="key key--mini">&#8592;</span><span class="key key--mini">&#8594;</span>
+      <span>to browse</span>
+      <span class="key key--mini">esc</span>
+      <span>to close</span>
+    </div>
     <div id="detailBody" style="min-height:100%;display:flex;align-items:center;justify-content:center;align-content:center;padding:56px 80px;box-sizing:border-box;gap:60px 64px;flex-wrap:wrap"></div>
   </div>
 

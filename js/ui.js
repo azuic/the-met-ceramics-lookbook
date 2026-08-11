@@ -24,7 +24,8 @@ const UI = (() => {
       catPanel: q('catPanel'), catBody: q('catBody'), catRows: q('catRows'),
       tabMat: q('tabMat'), tabDep: q('tabDep'), tabNote: q('tabNote'),
       monoBtn: q('monoBtn'), monoCount: q('monoCount'),
-      wheelWrap: q('wheelWrap'), glazeRing: q('glazeRing'), ringThumb: q('ringThumb'),
+      wheelWrap: q('wheelWrap'), glazeRing: q('glazeRing'),
+      ringBase: q('ringBase'), ringArc: q('ringArcPath'),
       wheelHit: q('wheelHit'), wheelRing: q('wheelRing'), glyphs: q('glyphs'),
       receipt: q('receipt'), receiptDate: q('receiptDate'), receiptLines: q('receiptLines'),
       receiptFoot: q('receiptFoot'), countText: q('countText'), stub: q('stub'),
@@ -52,7 +53,7 @@ const UI = (() => {
     n.stub.addEventListener('click', act.tear);
     n.emptyReset.addEventListener('click', act.tear);
     n.seeAll.addEventListener('click', act.seeAll);
-    n.glazeRing.addEventListener('pointerdown', ringScrub);
+    n.ringBase.addEventListener('pointerdown', ringScrub);
     n.wheelHit.addEventListener('pointerdown', wheelDown);
 
     buildSortRows();
@@ -102,7 +103,7 @@ const UI = (() => {
   function ringScrub(e) {
     e.preventDefault();
     e.stopPropagation();
-    const r = n.glazeRing.getBoundingClientRect();
+    const r = n.ringBase.getBoundingClientRect();
     const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
     const to = (px, py) => {
       const a = Math.atan2(py - cy, px - cx) * 180 / Math.PI;
@@ -216,8 +217,13 @@ const UI = (() => {
       const shape = g.firstChild;
       shape.style.cssText = shape.dataset.css + (S.lattice === i ? '#262623' : '#BAB6AC');
     });
-    n.ringThumb.style.transform =
-      'rotate(' + (S.scrollFrac * 360).toFixed(1) + 'deg) translateY(-93px)';
+    // The arc runs along the inside of the glaze band, from where the viewport
+    // starts to where it ends. A floor keeps it visible when the collection is
+    // long enough that the true slice would be a couple of pixels.
+    const C = 2 * Math.PI * 83;
+    const len = Math.max(0.025, Math.min(1, S.scrollSpan)) * C;
+    n.ringArc.style.strokeDasharray = len.toFixed(2) + ' ' + (C - len).toFixed(2);
+    n.ringArc.style.strokeDashoffset = (-S.scrollStart * C).toFixed(2);
     n.wheelWrap.classList.toggle('faded', S.overview);
 
     const lines = [

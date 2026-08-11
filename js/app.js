@@ -8,7 +8,7 @@ const App = (() => {
   const S = {
     mat: [], dep: [], sort: 0, lattice: 1, monoOnly: false, tab: 0,
     sortOpen: false, catOpen: false, wheelAngle: -90, dragging: false,
-    tearing: false, count: 0, scrollFrac: 0, overview: false, detailK: -1,
+    tearing: false, count: 0, scrollStart: 0, scrollSpan: 1, overview: false, detailK: -1,
   };
 
   let buffer = null, prevCell = 0, tearTimer = 0;
@@ -143,7 +143,7 @@ const App = (() => {
     UI.init(S, actions);
     Grid.init(document.getElementById('field'), {
       overview: (v) => set({ overview: v }),
-      scroll: (f) => set({ scrollFrac: f }),
+      scroll: (r) => set({ scrollStart: r.start, scrollSpan: r.span }),
       open: openAt,
       blocked: () => Detail.isOpen(),
     });

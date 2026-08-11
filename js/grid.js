@@ -22,7 +22,7 @@ const Grid = (() => {
     on: {},
   };
 
-  let cv, ctx, raf, lastFrac = -1;
+  let cv, ctx, raf, lastStart = -1, lastSpan = -1;
 
   /* --- lattice ---------------------------------------------------------- */
 
@@ -248,8 +248,15 @@ const Grid = (() => {
     }
     if (hx > -1) { ctx.fillStyle = 'rgba(255,255,255,0.38)'; shape(g, hx, hy); }
 
-    const sf = maxS > 0 ? Math.min(1, G.scroll / maxS) : 0;
-    if (Math.abs(sf - lastFrac) > 0.003) { lastFrac = sf; emit('scroll', sf); }
+    // What the ring reports is the slice of the collection on screen, not a
+    // position: at 40px cells a viewport holds a real fraction of the sweep.
+    const span = Math.min(1, H / G.totalH);
+    const start = Math.min(1 - span, G.scroll / G.totalH);
+    if (Math.abs(start - lastStart) > 0.002 || Math.abs(span - lastSpan) > 0.002) {
+      lastStart = start;
+      lastSpan = span;
+      emit('scroll', { start, span });
+    }
   }
 
   function emit(name, value) { if (G.on[name]) G.on[name](value); }

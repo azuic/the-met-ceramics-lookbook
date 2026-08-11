@@ -199,26 +199,40 @@ a:hover { color: #C05A38; }
   opacity: 0.12;
   pointer-events: none;
 }
+/* The palette reads as a thin band of glaze laid on a paper ring, so it sits
+   with the dial rather than competing with it. */
+#ringBase {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  /* 26px meets the dial's own 148px face exactly, so the paper reads as one
+     surface instead of leaving a band of the field showing between them. */
+  border: 26px solid #FAF8F3;
+  border-radius: 50%;
+  box-shadow: 0 10px 26px rgba(38, 38, 35, 0.12), 0 0 0 1px #E4E0D7;
+  touch-action: none;
+}
 #glazeRing {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  -webkit-mask: radial-gradient(circle farthest-side, transparent 85%, #000 86%);
-  mask: radial-gradient(circle farthest-side, transparent 85%, #000 86%);
-  touch-action: none;
-}
-#ringThumb {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 11px;
-  height: 11px;
-  margin: -5.5px;
-  border-radius: 50%;
-  background: #FAF8F3;
-  border: 1.5px solid #262623;
-  box-shadow: 0 1px 4px rgba(38, 38, 35, 0.3);
   pointer-events: none;
+  -webkit-mask: radial-gradient(circle farthest-side, transparent 87%, #000 88%, #000 94%, transparent 95%);
+  mask: radial-gradient(circle farthest-side, transparent 87%, #000 88%, #000 94%, transparent 95%);
+}
+#ringArc {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+#ringArcPath {
+  fill: none;
+  stroke: #262623;
+  stroke-width: 4.5;
+  stroke-linecap: round;
 }
 #wheelRing {
   position: absolute;
@@ -294,6 +308,60 @@ a:hover { color: #C05A38; }
   justify-content: center;
   gap: 52px;
   animation: cardin2 .5s ease;
+}
+
+/* Keycaps, because these actions are all reachable from the keyboard and the
+   overlay should say so rather than imply it with a bare glyph. */
+.key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 34px;
+  height: 26px;
+  padding: 0 9px;
+  background: #FAF8F3;
+  border: 1px solid #BAB6AC;
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #262623;
+}
+.key--nav {
+  min-width: 42px;
+  height: 38px;
+  font-size: 16px;
+  letter-spacing: 0;
+  color: #6E6C64;
+}
+.key--mini {
+  min-width: 22px;
+  height: 19px;
+  padding: 0 5px;
+  font-size: 8px;
+  border-bottom-width: 1.5px;
+}
+#detailHint {
+  position: fixed;
+  left: 50%;
+  bottom: 26px;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(250, 248, 243, 0.92);
+  border: 1px solid #D8D4CB;
+  box-shadow: 0 8px 22px rgba(38, 38, 35, 0.10);
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #6E6C64;
+  white-space: nowrap;
 }
 
 #boot {
