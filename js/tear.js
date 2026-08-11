@@ -27,8 +27,13 @@ const Tear = (() => {
   const AMP = 3.6;  // how far a fibre may stray from the perforation
   const STEP = 6;   // vertex spacing — also the grain the split travels on
   const SOFT = 16;  // how far behind the split the edge finishes opening
-  const OUT = 40;   // how far the clip reaches past the box, so that anything
-                    // hanging outside it (the open-access stamp) is not cut off
+  /* How far the clip reaches past the box. It has to clear two things, and the
+   * second one is the reason it is this big: anything hanging outside the box
+   * (the open-access stamp), and the whole spread of the drop-shadow. Clipping
+   * is applied after filtering, so a clip that stops anywhere the shadow still
+   * has alpha cuts it off mid-falloff and leaves a faint hard-edged rectangle
+   * on the frosted backdrop. Past the falloff there is nothing left to cut. */
+  const OUT = 150;
   const MAXA = 26;  // degrees of swing once it hangs by the corner alone
   const PULL = 62;  // pixels of drag from joined to hanging
   const GO = 0.42;  // past this much it is committed and lets go
