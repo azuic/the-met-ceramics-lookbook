@@ -1,0 +1,13 @@
+# The site is index.html, css/, js/, data/ and cursor.png. Everything else in
+# the repo is how the site got made, not part of what it serves.
+
+pipeline/
+legacy/
+.github/
+.idea/
+.claude/
+
+PLAN.md
+DESIGN_BRIEF.md
+preview.png
+preview-detail.png
