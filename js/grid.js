@@ -222,10 +222,26 @@ const Grid = (() => {
     }
     const ease = 1 - Math.pow(1 - at, 3);
     const colors = Data.state.colors;
+
     // Below the overview threshold a 96px crop is a rounding error, and
     // loading sheets to draw it would be absurd — the whole collection on one
     // screen is a colour reading by definition.
-    const tiles = G.cell > OVERVIEW_CELL && Atlas.state.ready;
+    //
+    // Otherwise, tell the atlas which sheets this viewport needs before
+    // drawing anything, so the frame is all crops or all colour rather than a
+    // flickering mixture of the two.
+    let tiles = false;
+    if (G.cell > OVERVIEW_CELL && Atlas.state.ready) {
+      Atlas.needBegin();
+      for (let row = r0; row <= r1; row++) {
+        for (let col = 0; col < g.cols; col++) {
+          const k = row * g.cols + col;
+          if (k >= idx.length) break;
+          Atlas.need(idx[k]);
+        }
+      }
+      tiles = Atlas.needCommit();
+    }
 
     let hx = -1, hy = -1;
     const hk = G.hoverK;

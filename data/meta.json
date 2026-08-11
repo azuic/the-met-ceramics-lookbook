@@ -1,6 +1,6 @@
 {
- "count": 44171,
- "scanned": 51521,
+ "count": 44305,
+ "scanned": 51976,
  "generated": "stage 6",
  "shard": 1024,
  "shards": 44,
@@ -11,39 +11,39 @@
    "type": "Uint32"
   },
   "rgb": {
-   "offset": 176684,
+   "offset": 177220,
    "type": "Uint8"
   },
   "mat": {
-   "offset": 309200,
+   "offset": 310136,
    "type": "Uint8"
   },
   "dep": {
-   "offset": 353372,
+   "offset": 354444,
    "type": "Uint8"
   },
   "fam": {
-   "offset": 397544,
+   "offset": 398752,
    "type": "Uint8"
   },
   "mono": {
-   "offset": 441716,
+   "offset": 443060,
    "type": "Uint8"
   },
   "L": {
-   "offset": 485888,
+   "offset": 487368,
    "type": "Uint8"
   },
   "C": {
-   "offset": 530060,
+   "offset": 531676,
    "type": "Uint8"
   },
   "h": {
-   "offset": 574232,
+   "offset": 575984,
    "type": "Uint16"
   },
   "year": {
-   "offset": 662576,
+   "offset": 664596,
    "type": "Int16"
   }
  },
@@ -52,136 +52,136 @@
   "C": 1000,
   "h": 10
  },
- "monoCount": 6791,
+ "monoCount": 6809,
  "families": [
   {
    "name": "cobalt",
    "hex": "#263A8C",
    "surface": "underglaze cobalt decoration",
-   "count": 913
+   "count": 914
   },
   {
    "name": "turquoise",
    "hex": "#2A9DA3",
    "surface": "copper-alkaline glaze",
-   "count": 1124
+   "count": 1126
   },
   {
    "name": "celadon",
    "hex": "#B0C4AC",
    "surface": "celadon glaze over incised body",
-   "count": 1113
+   "count": 1117
   },
   {
    "name": "copper green",
    "hex": "#4A7C4A",
    "surface": "copper-green lead glaze",
-   "count": 1139
+   "count": 1146
   },
   {
    "name": "terracotta",
    "hex": "#BC6A48",
    "surface": "slip-painted body",
-   "count": 8615
+   "count": 8627
   },
   {
    "name": "iron red",
    "hex": "#96362C",
    "surface": "iron-red glaze",
-   "count": 2099
+   "count": 2104
   },
   {
    "name": "ochre",
    "hex": "#BA8F3E",
    "surface": "amber lead glaze",
-   "count": 10429
+   "count": 10466
   },
   {
    "name": "lustre",
    "hex": "#9C7C3E",
    "surface": "overglaze lustre",
-   "count": 2127
+   "count": 2131
   },
   {
    "name": "cream",
    "hex": "#E2D8C2",
    "surface": "undecorated buff body",
-   "count": 9697
+   "count": 9738
   },
   {
    "name": "manganese",
    "hex": "#3A3034",
    "surface": "manganese-black glaze",
-   "count": 6915
+   "count": 6936
   }
  ],
  "materials": [
   {
    "name": "terracotta",
-   "count": 16620
+   "count": 16642
   },
   {
    "name": "porcelain",
-   "count": 8498
+   "count": 8538
   },
   {
    "name": "earthenware",
-   "count": 5464
+   "count": 5476
   },
   {
    "name": "ceramic",
-   "count": 3143
+   "count": 3148
   },
   {
    "name": "faience",
-   "count": 2845
+   "count": 2849
   },
   {
    "name": "clay",
-   "count": 2079
+   "count": 2094
   },
   {
    "name": "pottery",
-   "count": 1861
+   "count": 1867
   },
   {
    "name": "stoneware",
-   "count": 1389
+   "count": 1392
   },
   {
    "name": "fritware",
-   "count": 1228
+   "count": 1244
   },
   {
    "name": "other/unspecified",
-   "count": 1044
+   "count": 1055
   }
  ],
  "departments": [
   {
    "name": "Greek and Roman Art",
    "short": "GR",
-   "count": 16009
+   "count": 16029
   },
   {
    "name": "European Sculpture and Decorative Arts",
    "short": "ESDA",
-   "count": 7029
+   "count": 7052
   },
   {
    "name": "Asian Art",
    "short": "AS",
-   "count": 5896
+   "count": 5907
   },
   {
    "name": "Egyptian Art",
    "short": "EG",
-   "count": 4557
+   "count": 4579
   },
   {
    "name": "Islamic Art",
    "short": "IS",
-   "count": 3078
+   "count": 3107
   },
   {
    "name": "The American Wing",
@@ -191,7 +191,7 @@
   {
    "name": "Ancient Near Eastern Art",
    "short": "ANE",
-   "count": 1971
+   "count": 1979
   },
   {
    "name": "Arts of Africa, Oceania, and the Americas",
@@ -206,7 +206,7 @@
   {
    "name": "Everything else",
    "short": "MISC",
-   "count": 744,
+   "count": 765,
    "note": "8 depts, <400 ea."
   }
  ]

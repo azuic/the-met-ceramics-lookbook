@@ -6,15 +6,18 @@
  * have shown anyway, so nothing ever waits on a network round trip. */
 
 const Atlas = (() => {
-  const MAX_RESIDENT = 8;   // ~130 MB decoded at 2016px sheets
+  // ~16 MB decoded per 2016px sheet. 14 is chosen to clear the monochrome
+  // view, which is a first-class view and spans 9 sheets on a 900px viewport
+  // and more on a taller one; beyond this the field falls back to colour.
+  const MAX_RESIDENT = 14;
   const MAX_INFLIGHT = 4;
 
   const S = {
     ready: false,
     index: null,
-    sheets: new Map(),      // n -> {img, used} once decoded
+    sheets: new Map(),      // n -> img, once decoded
     pending: new Set(),
-    clock: 0,
+    wanted: new Set(),      // the sheets this frame's viewport needs
     onload: null,
   };
 
@@ -41,17 +44,6 @@ const Atlas = (() => {
     return true;
   }
 
-  function evict() {
-    while (S.sheets.size > MAX_RESIDENT) {
-      let oldest = null, oldestUsed = Infinity;
-      for (const [n, sheet] of S.sheets) {
-        if (sheet.used < oldestUsed) { oldestUsed = sheet.used; oldest = n; }
-      }
-      if (oldest === null) return;
-      S.sheets.delete(oldest);
-    }
-  }
-
   function request(n) {
     if (S.pending.size >= MAX_INFLIGHT || S.pending.has(n)) return;
     S.pending.add(n);
@@ -59,27 +51,54 @@ const Atlas = (() => {
     img.decoding = 'async';
     img.onload = () => {
       S.pending.delete(n);
-      S.sheets.set(n, { img, used: ++S.clock });
-      evict();
+      S.sheets.set(n, img);
       if (S.onload) S.onload();
     };
     img.onerror = () => { S.pending.delete(n); };
     img.src = 'data/atlas/' + String(n).padStart(3, '0') + '.webp';
   }
 
-  /* Where object i lives, or null if its sheet is not resident yet — in which
-   * case the sheet is requested and the caller draws flat colour this frame. */
+  /* The residency rule.
+   *
+   * Evicting by least-recently-used looks reasonable and is exactly wrong
+   * here: a filtered view scatters its objects across far more sheets than can
+   * be held, so every frame evicts sheets the next frame wants, and the field
+   * blinks between crop and colour forever. Instead the viewport states which
+   * sheets it needs, and that set is held whole or not at all.
+   *
+   * Declare the frame's needs with needBegin/need, then call needCommit: it
+   * returns false when the view is too scattered to stream, and the caller
+   * draws the colour field instead — which is a true reading of the
+   * collection, not a degraded one. Zooming in narrows the span and the crops
+   * come back. */
+  function needBegin() { S.wanted.clear(); }
+
+  function need(i) {
+    if (S.ready) S.wanted.add((i / S.index.perSheet) | 0);
+  }
+
+  function needCommit() {
+    if (!S.ready || S.wanted.size > MAX_RESIDENT) return false;
+    for (const n of Array.from(S.sheets.keys())) {
+      if (!S.wanted.has(n)) S.sheets.delete(n);
+    }
+    for (const n of S.wanted) {
+      if (!S.sheets.has(n)) request(n);
+    }
+    return true;
+  }
+
+  /* Where object i lives, or null if its sheet is not resident. A pure
+   * lookup: residency was already decided for this frame. */
   function tile(i) {
     if (!S.ready) return null;
     const per = S.index.perSheet;
-    const n = (i / per) | 0;
-    const sheet = S.sheets.get(n);
-    if (!sheet) { request(n); return null; }
-    sheet.used = ++S.clock;
+    const img = S.sheets.get((i / per) | 0);
+    if (!img) return null;
     const k = i % per;
     const t = S.index.tile;
     return {
-      img: sheet.img,
+      img,
       sx: (k % S.index.cols) * t,
       sy: ((k / S.index.cols) | 0) * t,
       size: t,
@@ -96,5 +115,5 @@ const Atlas = (() => {
     return [(size - sw) / 2, (size - sh) / 2, sw, sh];
   }
 
-  return { load, tile, cover, state: S };
+  return { load, tile, cover, needBegin, need, needCommit, state: S };
 })();

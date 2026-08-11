@@ -10,14 +10,14 @@ expire. See `../PLAN.md` for the reasoning.
 |---|---|---|
 | 1 — mine the CSV | `mine.py` | **done** |
 | gate — validate the rules | `validate.py` | **passing** |
-| 2 — fetch image URLs + metadata | `fetch.py` | **done** — 51,521 usable |
-| 3 — crop, resize, measure colour | `tiles.py` | **done** — 51,521 measured, 44,171 tiled |
+| 2 — fetch image URLs + metadata | `fetch.py` | **done** — 51,976 usable |
+| 3 — crop, resize, measure colour | `tiles.py` | **done** — 51,976 measured, 44,305 tiled |
 | 3b — crop quality control | `qc.py` | **tuned** — 6.4% reject, 16.4% mono |
 | 4 — extract colour | — | folded into stage 3, one pass |
-| 5 — pack atlases | `atlas.py` | **done** — 101 sheets, 78.6 MB |
-| 6 — emit site data | `emit.py` | **done** — 44,171 objects |
+| 5 — pack atlases | `atlas.py` | **done** — 101 sheets, 78.8 MB |
+| 6 — emit site data | `emit.py` | **done** — 44,305 objects |
 
-Stage 3 wrote every crop to `cache/tiles/96/` and `cache/tiles/40/` — 44,171
+Stage 3 wrote every crop to `cache/tiles/96/` and `cache/tiles/40/` — 44,305
 each. Stage 5 packs the 96px tier into `data/atlas/`, and the grid blits from
 those sheets.
 
@@ -51,7 +51,7 @@ python3 pipeline/emit.py               # rebuilds data/ for the site
 
 `emit.py` reads `data/colours.jsonl`, `data/candidates.jsonl` and
 `data/api_objects.jsonl` (plain or `.gz`) and writes `../data/`: `grid.bin`
-(733 KB, one columnar record per object), `meta.json`, and 44 detail shards
+(736 KB, one columnar record per object), `meta.json`, and 44 detail shards
 that are fetched only when a tile is opened. Re-run it whenever stage 3
 extends `colours.jsonl`.
 

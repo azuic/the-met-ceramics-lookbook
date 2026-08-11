@@ -201,6 +201,7 @@ def main() -> None:
     dep_counts = [0] * (len(DEPARTMENTS) + 1)
     fam_counts = [0] * len(FAMILIES)
     mono_count = 0
+    mono_rescued = 0
     tail_depts = set()
     details = []
 
@@ -209,9 +210,18 @@ def main() -> None:
         cand = cands.get(oid, {})
         rec = api.get(oid, {})
 
-        mono = 1 if col.get("mono") else 0
         L, C, h = float(col["L"]), float(col["C"]), float(col["h"])
         fam = family(L, C, h)
+
+        # Stage 3 decides "monochrome" from the 95th percentile of the whole
+        # photograph's chroma, so a small coloured object on a large grey
+        # backdrop reads as greyscale. Six of 6,815 do. The crop is what the
+        # grid actually draws, so the crop's own chroma has the last word: if
+        # it is plainly coloured, the photograph was not black and white.
+        mono = 1 if col.get("mono") else 0
+        if mono and C >= 0.018:
+            mono = 0
+            mono_rescued += 1
         r, g, b = (col.get("rgb") or [128, 128, 128])[:3]
 
         mat = mat_index.get(cand.get("type", ""), len(MATERIALS) - 1)
@@ -325,7 +335,8 @@ def main() -> None:
     size = (OUT / "grid.bin").stat().st_size
     print(f"  grid.bin   {size / 1024:,.0f} KB  ({n:,} objects)")
     print(f"  detail/    {shards} shards of {SHARD}")
-    print(f"  monochrome {mono_count:,} ({100 * mono_count / n:.1f}%)")
+    print(f"  monochrome {mono_count:,} ({100 * mono_count / n:.1f}%)"
+          + (f"  [{mono_rescued} reclassified as colour]" if mono_rescued else ""))
     print("  palette:")
     for i, (nm, _) in enumerate(FAMILIES):
         c = fam_counts[i]
