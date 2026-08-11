@@ -226,22 +226,13 @@ const Grid = (() => {
     // Below the overview threshold a 96px crop is a rounding error, and
     // loading sheets to draw it would be absurd — the whole collection on one
     // screen is a colour reading by definition.
-    //
-    // Otherwise, tell the atlas which sheets this viewport needs before
-    // drawing anything, so the frame is all crops or all colour rather than a
-    // flickering mixture of the two.
-    let tiles = false;
-    if (G.cell > OVERVIEW_CELL && Atlas.state.ready) {
-      Atlas.needBegin();
-      for (let row = r0; row <= r1; row++) {
-        for (let col = 0; col < g.cols; col++) {
-          const k = row * g.cols + col;
-          if (k >= idx.length) break;
-          Atlas.need(idx[k]);
-        }
-      }
-      tiles = Atlas.needCommit();
-    }
+    const tiles = G.cell > OVERVIEW_CELL && Atlas.state.ready;
+    // The atlas sizes its cache to what this frame actually asks for, so the
+    // pass has to be bracketed. Cells record their want through Atlas.tile()
+    // as they draw, which is why there is no separate counting pass. In
+    // overview the brackets are skipped entirely, which leaves whatever is
+    // resident alone and makes zooming back in instant.
+    if (tiles) Atlas.beginFrame();
 
     let hx = -1, hy = -1;
     const hk = G.hoverK;
@@ -262,6 +253,7 @@ const Grid = (() => {
         if (k === hk && G.cell > OVERVIEW_CELL) { hx = x; hy = y; }
       }
     }
+    if (tiles) Atlas.endFrame();
     if (hx > -1) { ctx.fillStyle = 'rgba(255,255,255,0.38)'; shape(g, hx, hy); }
 
     // What the ring reports is the slice of the collection on screen, not a
