@@ -1,6 +1,6 @@
 {
- "count": 44305,
- "scanned": 51976,
+ "count": 44354,
+ "scanned": 51521,
  "generated": "stage 6",
  "shard": 1024,
  "shards": 44,
@@ -11,39 +11,39 @@
    "type": "Uint32"
   },
   "rgb": {
-   "offset": 177220,
+   "offset": 177416,
    "type": "Uint8"
   },
   "mat": {
-   "offset": 310136,
+   "offset": 310480,
    "type": "Uint8"
   },
   "dep": {
-   "offset": 354444,
+   "offset": 354836,
    "type": "Uint8"
   },
   "fam": {
-   "offset": 398752,
+   "offset": 399192,
    "type": "Uint8"
   },
   "mono": {
-   "offset": 443060,
+   "offset": 443548,
    "type": "Uint8"
   },
   "L": {
-   "offset": 487368,
+   "offset": 487904,
    "type": "Uint8"
   },
   "C": {
-   "offset": 531676,
+   "offset": 532260,
    "type": "Uint8"
   },
   "h": {
-   "offset": 575984,
+   "offset": 576616,
    "type": "Uint16"
   },
   "year": {
-   "offset": 664596,
+   "offset": 665324,
    "type": "Int16"
   }
  },
@@ -52,151 +52,151 @@
   "C": 1000,
   "h": 10
  },
- "monoCount": 6809,
+ "monoCount": 6813,
  "families": [
   {
    "name": "cobalt",
    "hex": "#263A8C",
    "surface": "underglaze cobalt decoration",
-   "count": 914
+   "count": 1337
   },
   {
    "name": "turquoise",
    "hex": "#2A9DA3",
    "surface": "copper-alkaline glaze",
-   "count": 1126
+   "count": 1303
   },
   {
    "name": "celadon",
    "hex": "#B0C4AC",
    "surface": "celadon glaze over incised body",
-   "count": 1117
+   "count": 797
   },
   {
    "name": "copper green",
    "hex": "#4A7C4A",
    "surface": "copper-green lead glaze",
-   "count": 1146
+   "count": 798
   },
   {
    "name": "terracotta",
    "hex": "#BC6A48",
    "surface": "slip-painted body",
-   "count": 8627
+   "count": 12456
   },
   {
    "name": "iron red",
    "hex": "#96362C",
    "surface": "iron-red glaze",
-   "count": 2104
+   "count": 2551
   },
   {
    "name": "ochre",
    "hex": "#BA8F3E",
    "surface": "amber lead glaze",
-   "count": 10466
+   "count": 6482
   },
   {
    "name": "lustre",
    "hex": "#9C7C3E",
    "surface": "overglaze lustre",
-   "count": 2131
+   "count": 419
   },
   {
    "name": "cream",
    "hex": "#E2D8C2",
    "surface": "undecorated buff body",
-   "count": 9738
+   "count": 9059
   },
   {
    "name": "manganese",
    "hex": "#3A3034",
    "surface": "manganese-black glaze",
-   "count": 6936
+   "count": 9152
   }
  ],
  "materials": [
   {
    "name": "terracotta",
-   "count": 16642
+   "count": 16651
   },
   {
    "name": "porcelain",
-   "count": 8538
+   "count": 8550
   },
   {
    "name": "earthenware",
-   "count": 5476
+   "count": 5482
   },
   {
    "name": "ceramic",
-   "count": 3148
+   "count": 3154
   },
   {
    "name": "faience",
-   "count": 2849
+   "count": 2853
   },
   {
    "name": "clay",
-   "count": 2094
+   "count": 2098
   },
   {
    "name": "pottery",
-   "count": 1867
+   "count": 1870
   },
   {
    "name": "stoneware",
-   "count": 1392
+   "count": 1389
   },
   {
    "name": "fritware",
-   "count": 1244
+   "count": 1248
   },
   {
    "name": "other/unspecified",
-   "count": 1055
+   "count": 1059
   }
  ],
  "departments": [
   {
    "name": "Greek and Roman Art",
    "short": "GR",
-   "count": 16029
+   "count": 16037
   },
   {
    "name": "European Sculpture and Decorative Arts",
    "short": "ESDA",
-   "count": 7052
+   "count": 7063
   },
   {
    "name": "Asian Art",
    "short": "AS",
-   "count": 5907
+   "count": 5910
   },
   {
    "name": "Egyptian Art",
    "short": "EG",
-   "count": 4579
+   "count": 4589
   },
   {
    "name": "Islamic Art",
    "short": "IS",
-   "count": 3107
+   "count": 3121
   },
   {
    "name": "The American Wing",
    "short": "AW",
-   "count": 2032
+   "count": 2024
   },
   {
    "name": "Ancient Near Eastern Art",
    "short": "ANE",
-   "count": 1979
+   "count": 1985
   },
   {
    "name": "Arts of Africa, Oceania, and the Americas",
    "short": "AOA",
-   "count": 1503
+   "count": 1504
   },
   {
    "name": "Medieval Art",
@@ -206,7 +206,7 @@
   {
    "name": "Everything else",
    "short": "MISC",
-   "count": 765,
+   "count": 769,
    "note": "8 depts, <400 ea."
   }
  ]
