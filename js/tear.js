@@ -258,13 +258,25 @@ const Tear = (() => {
         },
       });
 
-      fall.to(holder, {
-        v: 1,
-        duration: 0.13 * (1 - p) + 0.05,
-        ease: 'power3.in',
-        onUpdate: () => setP(holder.v),
-      });
-      fall.add(onTear);
+      const step = () => setP(holder.v);
+      /* Clearing the filters can change the receipt's height, and the seam is
+       * cut in pixels, so it is re-read before the last of the split runs. */
+      const commit = () => { onTear(); if (measure()) draw(false); };
+
+      if (p < GO) {
+        // Nobody pulled it — a click or a key did. Then the tear has to do the
+        // pulling itself, or there is nothing to watch: take up the slack,
+        // strain against the perforation, and only then let it run.
+        fall.to(holder, { v: 0.52, duration: 0.3, ease: 'power2.out', onUpdate: step })
+          .to(holder, { v: 0.46, duration: 0.1, ease: 'sine.inOut', onUpdate: step })
+          .add(commit)
+          .to(holder, { v: 1, duration: 0.26, ease: 'power3.in', onUpdate: step });
+      } else {
+        // Already pulled past the commit point by hand: it only has to finish.
+        fall.add(commit)
+          .to(holder, { v: 1, duration: 0.13 * (1 - p) + 0.05, ease: 'power3.in', onUpdate: step });
+      }
+
       fall.to(stub, { y: '+=320', duration: 0.66, ease: 'power2.in' }, 'drop')
         .to(stub, { rotation: '-=34', x: '+=' + drift, duration: 0.66, ease: 'none' }, 'drop')
         .to(stub, {
