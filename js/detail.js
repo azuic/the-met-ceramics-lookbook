@@ -8,7 +8,7 @@
 
 const Detail = (() => {
   const { el, fill } = DOM;
-  let root, body, current = -1;
+  let root, body, current = -1, tear = null, opened = 0;
 
   function titleCase(s) {
     return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
@@ -66,7 +66,7 @@ const Detail = (() => {
 
     const title = (rec && rec.title) || titleCase(matName) + ' object';
 
-    return el('div', { class: 'card' }, [
+    const sheet = el('div', { class: 'card tear-sheet' }, [
       el('div', {
         style: 'position:absolute;top:-12px;right:-14px;background:#F3F1EC;border:1.5px solid #C05A38;' +
           'color:#C05A38;padding:5px 8px;transform:rotate(3deg);font-size:8px;letter-spacing:0.14em',
@@ -85,15 +85,28 @@ const Detail = (() => {
           'display:inline-block;letter-spacing:0.16em;font-size:9px;text-transform:uppercase',
         text: dep.short + ' · OBJ ' + S.id[i],
       }),
-      el('a', {
-        href: rec ? rec.url : 'https://www.metmuseum.org/art/collection/search',
-        target: '_blank',
-        rel: 'noopener',
-        style: 'display:block;margin-top:18px;border-top:1px dashed #928F86;padding-top:12px;text-align:center;' +
-          'font-size:8px;letter-spacing:0.22em;text-transform:uppercase;text-decoration:none',
-        text: '✂ Tear here for the full record',
-      }),
     ]);
+
+    /* The coupon is the card's own stub: take it off and you leave with the
+     * record. Modifier-clicks are left to the browser so the link still
+     * behaves like a link; everything else is the tear, which opens the record
+     * itself at the moment the paper lets go. */
+    const url = rec ? rec.url : 'https://www.metmuseum.org/art/collection/search';
+    const coupon = el('a', {
+      class: 'coupon tear-stub',
+      href: url,
+      target: '_blank',
+      rel: 'noopener',
+      // Browsers give links their own native drag, which would swallow this one.
+      draggable: 'false',
+      text: '✂ Tear off for the full record',
+      onclick: (e) => {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+      },
+    });
+
+    return el('div', { class: 'card-stack' }, [sheet, coupon]);
   }
 
   function attrs(i) {
@@ -119,7 +132,23 @@ const Detail = (() => {
   /* Rebuilding the contents on every open is what restarts the card
    * animations, and 44k records means only one is ever built. */
   function render(i, rec) {
-    fill(body, [plate(i, rec), card(i, rec), attrs(i)]);
+    if (tear) { tear.destroy(); tear = null; }
+    const stack = card(i, rec);
+    fill(body, [plate(i, rec), stack, attrs(i)]);
+    tear = Tear.attach({
+      sheet: stack.firstChild,
+      stub: stack.lastChild,
+      seed: 23 + (i % 7),
+      keys: false,
+      joined: true,
+      onCommit: () => {
+        // One record per tear, however many ways the gesture reports itself.
+        const now = Date.now();
+        if (now - opened < 600) return;
+        opened = now;
+        window.open(stack.lastChild.href, '_blank', 'noopener');
+      },
+    });
   }
 
   function open(i) {
@@ -132,6 +161,7 @@ const Detail = (() => {
   function close() {
     current = -1;
     root.hidden = true;
+    if (tear) { tear.destroy(); tear = null; }
     DOM.clear(body);
   }
 

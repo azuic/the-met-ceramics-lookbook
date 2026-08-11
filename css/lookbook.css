@@ -15,6 +15,11 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Every panel here is shown and hidden with the hidden attribute, and the
+   rule behind it is a user-agent one — so any author display rule on the same
+   element silently outranks it and the thing never goes away. */
+[hidden] { display: none !important; }
+
 a { color: #262623; }
 a:hover { color: #C05A38; }
 ::selection { background: #C05A38; color: #F3F1EC; }
@@ -107,7 +112,51 @@ a:hover { color: #C05A38; }
   border-color: #C05A38;
 }
 
-/* The receipt sits slightly off-square, the way a slip of paper does. */
+/* A tear wants two pieces of paper, not one with a dashed line drawn across
+   it. The sheet carries 28px of stock below the perforation that is always
+   clipped away — it is the slack the sheet bends into while the split travels,
+   and it costs no layout because the margin takes it straight back. The pieces
+   drop-shadow rather than box-shadow so the shadow follows the torn edge.
+   Each sheet and stub drops the border along its own seam separately: that
+   edge is not printed, it is torn, so it is declared where the border is. */
+.tear-sheet {
+  position: relative;
+  margin-bottom: -28px;
+}
+.tear-stub {
+  position: relative;
+  margin-top: -5px;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+/* Everything printed or torn along the seam. The overlay is a child of the
+   piece it belongs to, so the clip takes the outer half of each stroke and
+   leaves the inner half showing — which is how a torn edge catches the light,
+   and how the last perforation before the split ends mid-dash. */
+.tear-fringe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  fill: none;
+}
+.tear-fibre {
+  stroke: #FFFDF7;
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+}
+.tear-perf {
+  stroke: var(--perf, #ADA79A);
+  stroke-width: 1;
+  stroke-dasharray: 3.5 4.5;
+}
+
+/* The receipt sits slightly off-square, the way a slip of paper does. The
+   wrapper carries nothing but that tilt and the depth the stub turns in. */
 #receipt {
   pointer-events: auto;
   position: fixed;
@@ -115,10 +164,20 @@ a:hover { color: #C05A38; }
   left: 28px;
   bottom: 32px;
   width: 240px;
+  transform: rotate(-0.6deg);
+  perspective: 800px;
+  /* Column, not blocks: the sheet and the stub both pull themselves up over
+     the seam with negative margins, and adjoining block margins collapse to
+     the more negative of the two instead of adding up. Flex items don't. */
+  display: flex;
+  flex-direction: column;
+}
+#receiptSheet {
   background: #FAF8F3;
   border: 1px solid #D8D4CB;
-  box-shadow: 0 12px 30px rgba(38, 38, 35, 0.14);
-  transform: rotate(-0.6deg);
+  border-bottom: 0;
+  padding-bottom: 28px;
+  filter: drop-shadow(0 12px 26px rgba(38, 38, 35, 0.15));
 }
 #receipt .line {
   display: flex;
@@ -142,19 +201,20 @@ a:hover { color: #C05A38; }
   line-height: 1.4;
 }
 #stub {
-  border-top: 1px dashed #928F86;
-  padding: 9px 14px;
+  background: #FAF8F3;
+  border: 1px solid #D8D4CB;
+  border-top: 0;
+  padding: 14px 14px 9px;
   text-align: center;
   font-size: 8px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: #C05A38;
-  background: #FAF8F3;
-  transition: transform .45s ease, opacity .45s ease;
+  filter: drop-shadow(0 9px 18px rgba(38, 38, 35, 0.14));
 }
-#stub.tearing {
-  transform: translateY(70px) rotate(9deg);
-  opacity: 0;
+#stub:focus-visible {
+  outline: 1px solid #C05A38;
+  outline-offset: -3px;
 }
 
 /* The instruction sits on the field rather than on paper, so it needs its own
@@ -278,14 +338,42 @@ a:hover { color: #C05A38; }
   box-shadow: 0 24px 60px rgba(38, 38, 35, 0.22);
   animation: cardin .4s ease;
 }
-#detail .card {
+/* The card and the coupon under it are one printed sheet until you take the
+   coupon off, so they share a stack rather than each floating on their own. */
+#detail .card-stack {
   width: 360px;
+  perspective: 900px;
+  animation: cardin2 .45s ease;
+  display: flex;
+  flex-direction: column;
+}
+#detail .card {
+  --perf: #C6C0B4;
   background: #EFECE5;
   border: 1px solid #D8D4CB;
-  padding: 22px 24px 20px;
-  box-shadow: 0 16px 44px rgba(38, 38, 35, 0.14);
+  border-bottom: 0;
+  padding: 22px 24px 46px;
   position: relative;
-  animation: cardin2 .45s ease;
+  filter: drop-shadow(0 16px 38px rgba(38, 38, 35, 0.16));
+}
+#detail .coupon {
+  display: block;
+  background: #EFECE5;
+  border: 1px solid #D8D4CB;
+  border-top: 0;
+  padding: 17px 24px 12px;
+  text-align: center;
+  font-size: 8px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: #262623;
+  filter: drop-shadow(0 12px 26px rgba(38, 38, 35, 0.14));
+}
+#detail .coupon:hover { color: #C05A38; }
+#detail .coupon:focus-visible {
+  outline: 1px solid #C05A38;
+  outline-offset: -3px;
 }
 #detail .card .field {
   padding: 7px 0;
@@ -384,6 +472,8 @@ a:hover { color: #C05A38; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  #detail, #detail .plate, #detail .card, #detail .attrs { animation: none }
-  #wheelRing.settling, #catPanel, #stub { transition: none }
+  #detail, #detail .plate, #detail .card-stack, #detail .attrs { animation: none }
+  #wheelRing.settling, #catPanel { transition: none }
+  /* tear.js checks the same query and leaves the paper alone: no drag, no
+     swing, no fall — the stub is simply a button that does the thing. */
 }

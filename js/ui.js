@@ -1,7 +1,7 @@
 /* ui.js — the paper furniture floating over the field.
  *
  * Nodes are built once and updated in place, so the wheel's transform
- * transition and the receipt's tear survive a state change. */
+ * transition and a receipt stub half torn off both survive a state change. */
 
 const UI = (() => {
   const { el, fill } = DOM;
@@ -11,7 +11,9 @@ const UI = (() => {
     'Nine departments carry 98% — eight small ones share the last row',
   ];
 
-  let S, act, n = {};
+  let S, act, n = {}, receiptTear = null;
+
+  function hasFilters() { return S.mat.length > 0 || S.dep.length > 0 || S.monoOnly; }
 
   function q(id) { return document.getElementById(id); }
 
@@ -28,7 +30,8 @@ const UI = (() => {
       ringBase: q('ringBase'), ringArc: q('ringArcPath'),
       wheelHit: q('wheelHit'), wheelRing: q('wheelRing'), glyphs: q('glyphs'),
       receipt: q('receipt'), receiptDate: q('receiptDate'), receiptLines: q('receiptLines'),
-      receiptFoot: q('receiptFoot'), countText: q('countText'), stub: q('stub'),
+      receiptFoot: q('receiptFoot'), countText: q('countText'),
+      receiptSheet: q('receiptSheet'), stub: q('stub'),
       seeAll: q('seeAll'), empty: q('empty'), emptyReset: q('emptyReset'),
     };
 
@@ -50,8 +53,18 @@ const UI = (() => {
     n.tabMat.addEventListener('click', () => act.openTab(0));
     n.tabDep.addEventListener('click', () => act.openTab(1));
     n.monoBtn.addEventListener('click', act.toggleMono);
-    n.stub.addEventListener('click', act.tear);
-    n.emptyReset.addEventListener('click', act.tear);
+    // The stub comes off in your hand: pull it down and the perforation gives.
+    // The filters clear the moment it lets go, so the field is already
+    // re-flowing while the paper is still falling.
+    receiptTear = Tear.attach({
+      sheet: n.receiptSheet,
+      stub: n.stub,
+      seed: 11,
+      enabled: hasFilters,
+      onTear: act.tear,
+      onSettle: update,
+    });
+    n.emptyReset.addEventListener('click', () => receiptTear.rip());
     n.seeAll.addEventListener('click', act.seeAll);
     n.ringBase.addEventListener('pointerdown', ringScrub);
     n.wheelHit.addEventListener('pointerdown', wheelDown);
@@ -239,9 +252,16 @@ const UI = (() => {
     ])));
     n.countText.textContent = S.count.toLocaleString();
 
-    const hasFilters = S.mat.length > 0 || S.dep.length > 0 || S.monoOnly;
-    n.stub.hidden = !hasFilters;
-    n.stub.classList.toggle('tearing', S.tearing);
+    // Leave the stub alone while it is in the air — the filters it cleared are
+    // already gone, and hiding it mid-fall would snatch it out of view. The
+    // refresh is because the receipt changes height as filters come and go,
+    // and the torn edge is cut in pixels.
+    if (receiptTear && !receiptTear.busy()) {
+      const show = hasFilters();
+      if (show && n.stub.hidden) receiptTear.rejoin();
+      n.stub.hidden = !show;
+      receiptTear.refresh();
+    }
 
     n.seeAll.textContent = S.overview ? 'Return to the shelf' : 'See everything';
     n.empty.hidden = S.count !== 0;

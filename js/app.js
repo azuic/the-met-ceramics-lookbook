@@ -8,10 +8,10 @@ const App = (() => {
   const S = {
     mat: [], dep: [], sort: 0, lattice: 1, monoOnly: false, tab: 0,
     sortOpen: false, catOpen: false, wheelAngle: -90, dragging: false,
-    tearing: false, count: 0, scrollStart: 0, scrollSpan: 1, overview: false, detailK: -1,
+    count: 0, scrollStart: 0, scrollSpan: 1, overview: false, detailK: -1,
   };
 
-  let buffer = null, prevCell = 0, tearTimer = 0;
+  let buffer = null, prevCell = 0;
 
   function set(patch) {
     Object.assign(S, patch);
@@ -85,14 +85,12 @@ const App = (() => {
         Grid.zoomTo(prevCell || 40);
       }
     },
+    /* Called by the receipt the moment the stub lets go. The paper's timing is
+     * the paper's business — this just clears what the stub took with it. */
     tear() {
-      if (!(S.mat.length || S.dep.length || S.monoOnly) || tearTimer) return;
-      set({ tearing: true });
-      tearTimer = setTimeout(() => {
-        tearTimer = 0;
-        set({ mat: [], dep: [], monoOnly: false, tearing: false });
-        refresh(true);
-      }, 470);
+      if (!(S.mat.length || S.dep.length || S.monoOnly)) return;
+      set({ mat: [], dep: [], monoOnly: false });
+      refresh(true);
     },
     step(d) {
       const k = S.detailK + d;
