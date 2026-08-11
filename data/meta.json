@@ -1,0 +1,213 @@
+{
+ "count": 44171,
+ "scanned": 51521,
+ "generated": "stage 6",
+ "shard": 1024,
+ "shards": 44,
+ "imagePrefix": "https://images.metmuseum.org/CRDImages/",
+ "layout": {
+  "id": {
+   "offset": 0,
+   "type": "Uint32"
+  },
+  "rgb": {
+   "offset": 176684,
+   "type": "Uint8"
+  },
+  "mat": {
+   "offset": 309200,
+   "type": "Uint8"
+  },
+  "dep": {
+   "offset": 353372,
+   "type": "Uint8"
+  },
+  "fam": {
+   "offset": 397544,
+   "type": "Uint8"
+  },
+  "mono": {
+   "offset": 441716,
+   "type": "Uint8"
+  },
+  "L": {
+   "offset": 485888,
+   "type": "Uint8"
+  },
+  "C": {
+   "offset": 530060,
+   "type": "Uint8"
+  },
+  "h": {
+   "offset": 574232,
+   "type": "Uint16"
+  },
+  "year": {
+   "offset": 662576,
+   "type": "Int16"
+  }
+ },
+ "scale": {
+  "L": 255,
+  "C": 1000,
+  "h": 10
+ },
+ "monoCount": 6791,
+ "families": [
+  {
+   "name": "cobalt",
+   "hex": "#263A8C",
+   "surface": "underglaze cobalt decoration",
+   "count": 913
+  },
+  {
+   "name": "turquoise",
+   "hex": "#2A9DA3",
+   "surface": "copper-alkaline glaze",
+   "count": 1124
+  },
+  {
+   "name": "celadon",
+   "hex": "#B0C4AC",
+   "surface": "celadon glaze over incised body",
+   "count": 1113
+  },
+  {
+   "name": "copper green",
+   "hex": "#4A7C4A",
+   "surface": "copper-green lead glaze",
+   "count": 1139
+  },
+  {
+   "name": "terracotta",
+   "hex": "#BC6A48",
+   "surface": "slip-painted body",
+   "count": 8615
+  },
+  {
+   "name": "iron red",
+   "hex": "#96362C",
+   "surface": "iron-red glaze",
+   "count": 2099
+  },
+  {
+   "name": "ochre",
+   "hex": "#BA8F3E",
+   "surface": "amber lead glaze",
+   "count": 10429
+  },
+  {
+   "name": "lustre",
+   "hex": "#9C7C3E",
+   "surface": "overglaze lustre",
+   "count": 2127
+  },
+  {
+   "name": "cream",
+   "hex": "#E2D8C2",
+   "surface": "undecorated buff body",
+   "count": 9697
+  },
+  {
+   "name": "manganese",
+   "hex": "#3A3034",
+   "surface": "manganese-black glaze",
+   "count": 6915
+  }
+ ],
+ "materials": [
+  {
+   "name": "terracotta",
+   "count": 16620
+  },
+  {
+   "name": "porcelain",
+   "count": 8498
+  },
+  {
+   "name": "earthenware",
+   "count": 5464
+  },
+  {
+   "name": "ceramic",
+   "count": 3143
+  },
+  {
+   "name": "faience",
+   "count": 2845
+  },
+  {
+   "name": "clay",
+   "count": 2079
+  },
+  {
+   "name": "pottery",
+   "count": 1861
+  },
+  {
+   "name": "stoneware",
+   "count": 1389
+  },
+  {
+   "name": "fritware",
+   "count": 1228
+  },
+  {
+   "name": "other/unspecified",
+   "count": 1044
+  }
+ ],
+ "departments": [
+  {
+   "name": "Greek and Roman Art",
+   "short": "GR",
+   "count": 16009
+  },
+  {
+   "name": "European Sculpture and Decorative Arts",
+   "short": "ESDA",
+   "count": 7029
+  },
+  {
+   "name": "Asian Art",
+   "short": "AS",
+   "count": 5896
+  },
+  {
+   "name": "Egyptian Art",
+   "short": "EG",
+   "count": 4557
+  },
+  {
+   "name": "Islamic Art",
+   "short": "IS",
+   "count": 3078
+  },
+  {
+   "name": "The American Wing",
+   "short": "AW",
+   "count": 2032
+  },
+  {
+   "name": "Ancient Near Eastern Art",
+   "short": "ANE",
+   "count": 1971
+  },
+  {
+   "name": "Arts of Africa, Oceania, and the Americas",
+   "short": "AOA",
+   "count": 1503
+  },
+  {
+   "name": "Medieval Art",
+   "short": "MED",
+   "count": 1352
+  },
+  {
+   "name": "Everything else",
+   "short": "MISC",
+   "count": 744,
+   "note": "8 depts, <400 ea."
+  }
+ ]
+}

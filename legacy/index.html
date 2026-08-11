@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>The MET Ceramic Medium Look Book</title>
+		<link rel="stylesheet" type="text/css" href="style.css" />
+		<link href="https://fonts.googleapis.com/css?family=Work+Sans:400,600&display=swap" rel="stylesheet">
+		<script>
+			document.documentElement.className="js";
+			let supportsCssVars=function(){
+				let e,t=document.createElement("style");
+				return t.innerHTML="root: { --tmp-var: bold; }",
+						document.head.appendChild(t),
+						e=!!(window.CSS&&window.CSS.supports&&window.CSS.supports("font-weight","var(--tmp-var)")),
+						t.parentNode.removeChild(t),
+						e};
+			supportsCssVars()||alert("Please view this demo in a modern browser that supports CSS Variables.");
+		</script>
+		<script src="grouped_types.js"></script>
+		<script src="categorized_ceramics.js"></script>
+	</head>
+	<body class="lookbook">
+		<script src="js/scrollMonitor.js"></script>
+
+		<div id="title" onclick="openInfo()">
+			<span>→</span><br>
+			<span id="title-text">The MET Ceramic Lookbook</span>
+		</div>
+		<div id="info">
+			<h3>The MET Ceramic Lookbook</h3>
+			<p>
+			<span> - a close lookup on the 9530 ceramic objects from the MET museum collection - </span><br>
+				<span> - scroll/click on tabs to go through all 9 types</span><br>
+				<span>       fritware, other/unspecified, terracotta, ceramic, pottery, earthenware, stoneware, clay, porcelain -</span><br>
+			<span> - click on each square to reveal a whole image and more details -</span><br>
+				<span id="closebtn" onclick="closeInfo()"> ← </span>
+			</p>
+		</div>
+		<script>
+			function openInfo() {
+				document.getElementById("info").style.width = "100%";
+				document.getElementById("title").style.display="none";
+			}
+
+			function closeInfo() {
+				document.getElementById("info").style.width = "0px";
+				document.getElementById("title").style.display="block";
+			}
+		</script>
+		<main id="mainContent">
+			<nav class="frame menu menu--sebastian">
+				<ul class="frame__demos menu__list" id="mediumSelection">
+					<script>
+						const mediumData = Object.keys(alltypes);
+						for (let m=0;m<mediumData.length;m++){
+							console.log(m);
+							let tabContainer = document.createElement('li');
+
+							tabContainer.setAttribute('class', "menu__item");
+							tabContainer.setAttribute('id',`tab_${mediumData[m]}`);
+							let mediumContainer = document.createElement('a');
+							mediumContainer.href=`#top_${ mediumData[m]}`;
+							mediumContainer.setAttribute('class','frame__demo');
+							mediumContainer.classList.add('menu__link');
+							mediumContainer.setAttribute('id',`name_${mediumData[m]}`);
+							mediumContainer.innerHTML=mediumData[m];
+							tabContainer.appendChild(mediumContainer)
+							document.getElementById("mediumSelection").appendChild(tabContainer);
+						};
+					</script>
+				</ul>
+
+			</nav>
+			<div class="content hidden">
+				<h2 class="content__title"></h2>
+				<span style="top:8em; right:5em; color:crimson; z-index: 102; position: absolute">[close]</span>
+			</div>
+			<!-- <div class="grid-wrap" id="gridWrapper"> -->
+				<div class="grid" id="gridContainer" medium="Ceramic"></div>
+					<script>
+						let setImmediate = (function() {
+							let fnsQueue = [],
+								hasSI = !!(window.setImmediate || window.msSetImmediate),
+								hasPM = window.addEventListener && window.postMessage
+							if (!hasSI && hasPM)
+								window.addEventListener('message', function(e) {
+									if (e.data === "sleipnirImmediate")
+										if (fnsQueue.length)
+											fnsQueue.shift()() // take the first fn from the array and execute it
+								}, false)
+							return window.setImmediate || window.msSetImmediate ||
+								(function() {
+									if (hasPM)
+										return function(fn) {
+											fnsQueue.push(fn)
+										}
+									return function(fn) {
+										setTimeout(fn, 0)
+									}
+								}())
+						}());
+
+						function renderItem() {
+							if (this.isInViewport) {
+								this.watchItem.style.backgroundImage = `url(https://d1tutlfztia4ba.cloudfront.net/resize-center/${this.watchItem.getAttribute('data-objId')}.png`;
+							}
+						}
+
+						function makeWatcher(element) {
+							let watcher = scrollMonitor.create(element);
+							watcher.enterViewport(renderItem);
+							renderItem.call(watcher);
+						}
+
+						let container = document.getElementById('gridContainer');
+
+						let frag = document.createDocumentFragment();
+
+						function addItems() {
+							let elements = Array.prototype.slice.apply(frag.childNodes);
+							container.appendChild(frag);
+							elements.forEach(makeWatcher);
+						}
+
+						let c=0;
+						function draw(){
+							for (let j=0;j<mediumData.length;j++) {
+
+								for (let i = 0; i < alltypes[mediumData[j]].length; i++) {
+									let itemContainer = document.createElement('div');
+									if (i === 0){
+										itemContainer.setAttribute('id',`top_${mediumData[j]}`);
+										itemContainer.setAttribute('data-isTop', 'true');
+									} else {
+										itemContainer.setAttribute('id',`end_${mediumData[j]}`);
+										itemContainer.setAttribute('data-isTop', 'false');
+									}
+									if (i===alltypes[mediumData[j]].length-1){
+										itemContainer.setAttribute('data-isBottom','true');
+									} else {
+										itemContainer.setAttribute('data-isBottom','false');
+									}
+									itemContainer.setAttribute('class', 'grid__item');
+									itemContainer.setAttribute('data-title', mediumData[j]);
+									itemContainer.setAttribute('data-medium', objects[alltypes[mediumData[j]][i]].origin);
+									itemContainer.setAttribute('data-objId', alltypes[mediumData[j]][i]);
+									itemContainer.setAttribute('data-surface', objects[alltypes[mediumData[j]][i]].surface);
+									itemContainer.style.backgroundRepeat='no-repeat';
+									itemContainer.style.backgroundSize='cover';
+									let item = document.createElement('div');
+									item.setAttribute('class', 'grid__item-inner');
+									itemContainer.appendChild(item);
+									frag.appendChild(itemContainer);
+									itemContainer.addEventListener('mouseEnter', function () {
+										document.getElementById(`tab_${mediumData[j]}`).classList.add('menu__item--current');
+
+									})
+									itemContainer.addEventListener('click',function () {
+										document.querySelector('.content').style.backgroundImage = `url(https://d1tutlfztia4ba.cloudfront.net/resizes/${alltypes[mediumData[j]][i]}.png`;
+										document.querySelector('.content__title').innerHTML = objects[alltypes[mediumData[j]][i]].origin;
+										document.querySelector('.content').classList.remove('hidden');
+										document.querySelector('.content').addEventListener('click',function () {
+											this.classList.add('hidden');
+										})
+									})
+									c+=1;
+								}
+
+
+							}
+							if (c===9530){
+								addItems();
+								setImmediate(function() {
+									scrollMonitor.recalculateLocations();
+								});
+							} else {
+								setImmediate(draw);
+							}
+
+						}
+						draw();
+						for (let j=0; j<mediumData.length; j++){
+							let currentType = document.getElementById(`tab_${mediumData[j]}`);
+							let firstItem = document.getElementById(`top_${mediumData[j]}`);
+							let lastItem = document.getElementById(`end_${mediumData[j]}`);
+							let typeWatcher = scrollMonitor.create(firstItem);
+							let typeEndWatcher = scrollMonitor.create(lastItem);
+							typeEndWatcher.stateChange(function(){
+								if (typeEndWatcher.isInViewport && typeWatcher.isAboveViewport){
+									currentType.classList.add('menu__item--current');
+									currentType.style.backgroundColor="#d94f5c"
+								} else if (typeEndWatcher.isAboveViewport){
+									currentType.classList.remove('menu__item--current');
+									currentType.style.backgroundColor="none";
+								}
+							})
+						}
+					</script>
+			</div>
+		</main>
+		<div class="cursor">
+			<div class="cursor__inner"></div>
+		</div>
+		<script>
+			let cursor = document.querySelector('.cursor');
+			document.addEventListener('mousemove', e => {
+				cursor.setAttribute("style", "top: "+(e.pageY - 10)+"px; left: "+(e.pageX - 10)+"px;")
+			})
+			let hideContent = document.querySelector('.content').classList.contains('hidden');
+			cursor.classList.add(hideContent?'cursor__inner--circle':'cursor__inner--cross');
+			// cursor.classList.remove(hideContent?'cursor__inner--cross':'cursor__inner--circle');
+			if (!hideContent){
+				let closeHint =  document.createElement('span');
+				closeHint.setAttribute("class", "cursor__inner");
+				closeHint.classList.add("cursor__inner--text");
+				closeHint.innerHTML="click to close";
+				cursor.appendChild(closeHint);
+			}
+		</script>
+	</body>
+</html>
