@@ -11,17 +11,23 @@ expire. See `../PLAN.md` for the reasoning.
 | 1 — mine the CSV | `mine.py` | **done** |
 | gate — validate the rules | `validate.py` | **passing** |
 | 2 — fetch image URLs + metadata | `fetch.py` | **done** — 51,521 usable |
-| 3 — crop, resize, measure colour | `tiles.py` | **colour done** — 51,521 measured |
+| 3 — crop, resize, measure colour | `tiles.py` | **done** — 51,521 measured, 44,171 tiled |
 | 3b — crop quality control | `qc.py` | **tuned** — 6.4% reject, 16.4% mono |
 | 4 — extract colour | — | folded into stage 3, one pass |
 | 5 — pack atlases | `atlas.py` | not started — see note |
 | 6 — emit site data | `emit.py` | **done** — 44,171 objects |
 
-Stage 5 is not on the critical path. The interface draws each object as a flat
-swatch of its own measured colour, so it needs `colours.jsonl` and nothing from
-the atlases; the detail view hotlinks its one full-resolution photograph live
-from the museum. Atlases become necessary only if tile imagery is ever wanted
-in the grid itself.
+Stage 3 wrote every crop to `cache/tiles/96/` and `cache/tiles/40/` — 44,171
+each, 67.7 MB and 17.7 MB of WebP. **Those crops are not on the site.**
+`cache/` is gitignored, stage 5 has not been written, so nothing packs them
+into atlases and nothing in `data/` carries imagery.
+
+That is deliberate for now: the finalized design draws each object as a flat
+swatch of its measured colour and has no image path at all, so the grid needs
+`colours.jsonl` and nothing else. The only photograph on the site is in the
+detail card, hotlinked live from the museum. Writing `atlas.py` and teaching
+`grid.js` to blit from the sheets is what it would take to put the crops
+themselves in the field.
 
 ## Running
 
