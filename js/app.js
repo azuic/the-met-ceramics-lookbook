@@ -135,6 +135,10 @@ const App = (() => {
       return;
     }
 
+    // The crops are optional: without an atlas the field still draws, in the
+    // colour it measured. Nothing below depends on this succeeding.
+    await Atlas.load(() => { Grid.state.dirty = true; });
+
     Detail.init(actions);
     UI.init(S, actions);
     Grid.init(document.getElementById('field'), {

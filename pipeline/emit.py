@@ -173,10 +173,17 @@ def main() -> None:
     mat_index = {name: i for i, name in enumerate(MATERIALS)}
     tail_index = len(DEPARTMENTS)
 
-    # Stable base order: ascending object ID. Every sort the interface offers is
-    # derived from these columns in the browser, so the payload carries no
-    # ordering of its own.
-    ids = sorted(colours, key=int)
+    # Base order is the palette sweep -- family, then hue, then lightness --
+    # which is the interface's default sort. Two things fall out of that:
+    # the default view needs no sort at all in the browser, and the atlas
+    # sheets packed in this same order are contiguous on screen, so a screenful
+    # of the default view pulls one or two sheets instead of twenty. The other
+    # sorts are still derived from these columns client-side.
+    ids = sorted(colours, key=lambda i: (
+        family(colours[i]["L"], colours[i]["C"], colours[i]["h"]),
+        colours[i]["h"],
+        colours[i]["L"],
+    ))
     n = len(ids)
 
     col_id = bytearray()

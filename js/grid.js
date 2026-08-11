@@ -41,21 +41,36 @@ const Grid = (() => {
     return [col * g.colW - (g.lat >= 2 ? g.colW / 2 : 0) + off, row * g.rowH];
   }
 
-  function shape(g, x, y) {
+  function blit(t, bx, by, bw, bh) {
+    const c = Atlas.cover(t.size, bw, bh);
+    ctx.drawImage(t.img, t.sx + c[0], t.sy + c[1], c[2], c[3], bx, by, bw, bh);
+  }
+
+  /* Draw one cell: the crop if its sheet is resident, otherwise the flat
+   * colour. Both take the lattice's shape — the square and rectangle lattices
+   * need no clip, the diamond and hexagon clip the blit to the path they
+   * would otherwise have filled. */
+  function paint(g, x, y, t) {
     const s = G.cell, gp = (G.gutter && s > OVERVIEW_CELL) ? 1 : 0;
+
     if (g.lat === 1 || g.lat === 0 || s <= OVERVIEW_CELL) {
+      let bx, by, bw, bh;
       if (gp) {
-        ctx.fillRect(x + gp, y + gp, g.colW - gp * 2, g.rowH - gp * 2);
+        bx = x + gp; by = y + gp; bw = g.colW - gp * 2; bh = g.rowH - gp * 2;
       } else {
         // Cell size is fractional at the overview tier, and a fractional
         // fillRect antialiases its edges -- 229 rows of that reads as pale
         // banding across the whole collection. Snap to whole pixels so the
         // swatches tile exactly.
         const x0 = Math.round(x), y0 = Math.round(y);
-        ctx.fillRect(x0, y0, Math.round(x + g.colW) - x0, Math.round(y + g.rowH) - y0);
+        bx = x0; by = y0;
+        bw = Math.round(x + g.colW) - x0;
+        bh = Math.round(y + g.rowH) - y0;
       }
+      if (t) blit(t, bx, by, bw, bh); else ctx.fillRect(bx, by, bw, bh);
       return;
     }
+
     if (g.lat === 2) {
       const cx = x + s / 2, cy = y;
       ctx.beginPath();
@@ -64,9 +79,14 @@ const Grid = (() => {
       ctx.lineTo(cx, cy + s / 2 - gp);
       ctx.lineTo(cx - s / 2 + gp, cy);
       ctx.closePath();
-      ctx.fill();
+      if (t) {
+        ctx.save(); ctx.clip();
+        blit(t, x + gp, cy - s / 2 + gp, s - gp * 2, s - gp * 2);
+        ctx.restore();
+      } else ctx.fill();
       return;
     }
+
     const hh = s * 0.5774, cx = x + s / 2, cy = y + s * 0.5774;
     ctx.beginPath();
     ctx.moveTo(cx, cy - hh);
@@ -76,8 +96,14 @@ const Grid = (() => {
     ctx.lineTo(cx - s / 2 + gp, cy + hh / 2);
     ctx.lineTo(cx - s / 2 + gp, cy - hh / 2);
     ctx.closePath();
-    ctx.fill();
+    if (t) {
+      ctx.save(); ctx.clip();
+      blit(t, x + gp, cy - hh, s - gp * 2, hh * 2);
+      ctx.restore();
+    } else ctx.fill();
   }
+
+  const shape = (g, x, y) => paint(g, x, y, null);
 
   function hitTest(x, y) {
     if (!G.index || !G.index.length) return -1;
@@ -196,6 +222,10 @@ const Grid = (() => {
     }
     const ease = 1 - Math.pow(1 - at, 3);
     const colors = Data.state.colors;
+    // Below the overview threshold a 96px crop is a rounding error, and
+    // loading sheets to draw it would be absurd — the whole collection on one
+    // screen is a colour reading by definition.
+    const tiles = G.cell > OVERVIEW_CELL && Atlas.state.ready;
 
     let hx = -1, hy = -1;
     const hk = G.hoverK;
@@ -212,7 +242,7 @@ const Grid = (() => {
           y = q[1] + (y - q[1]) * ease;
         }
         ctx.fillStyle = colors[o];
-        shape(g, x, y);
+        paint(g, x, y, tiles ? Atlas.tile(o) : null);
         if (k === hk && G.cell > OVERVIEW_CELL) { hx = x; hy = y; }
       }
     }

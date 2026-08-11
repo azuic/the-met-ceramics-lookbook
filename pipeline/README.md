@@ -14,20 +14,31 @@ expire. See `../PLAN.md` for the reasoning.
 | 3 — crop, resize, measure colour | `tiles.py` | **done** — 51,521 measured, 44,171 tiled |
 | 3b — crop quality control | `qc.py` | **tuned** — 6.4% reject, 16.4% mono |
 | 4 — extract colour | — | folded into stage 3, one pass |
-| 5 — pack atlases | `atlas.py` | not started — see note |
+| 5 — pack atlases | `atlas.py` | **done** — 101 sheets, 78.6 MB |
 | 6 — emit site data | `emit.py` | **done** — 44,171 objects |
 
 Stage 3 wrote every crop to `cache/tiles/96/` and `cache/tiles/40/` — 44,171
-each, 67.7 MB and 17.7 MB of WebP. **Those crops are not on the site.**
-`cache/` is gitignored, stage 5 has not been written, so nothing packs them
-into atlases and nothing in `data/` carries imagery.
+each. Stage 5 packs the 96px tier into `data/atlas/`, and the grid blits from
+those sheets.
 
-That is deliberate for now: the finalized design draws each object as a flat
-swatch of its measured colour and has no image path at all, so the grid needs
-`colours.jsonl` and nothing else. The only photograph on the site is in the
-detail card, hotlinked live from the museum. Writing `atlas.py` and teaching
-`grid.js` to blit from the sheets is what it would take to put the crops
-themselves in the field.
+**Order matters between stages 5 and 6.** `emit.py` sorts the payload into the
+palette sweep, and `atlas.py` packs in that same order by reading `grid.bin`'s
+own id column. That is what keeps a screenful of the default view inside one
+or two sheets instead of twenty. Re-running `emit.py` therefore invalidates the
+atlas, so run them in order:
+
+```sh
+python3 pipeline/emit.py
+python3 pipeline/atlas.py
+```
+
+`atlas.json` records the object count and the first and last ids; the browser
+checks them against `grid.bin` and falls back to flat colour rather than
+drawing a stale packing.
+
+The 40px tier is still unused. It exists for a fast-scroll tier that the canvas
+renderer has not needed: sheets that are not resident draw as the object's
+measured colour, which is a better placeholder than a blurrier tile.
 
 ## Running
 
