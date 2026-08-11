@@ -5,7 +5,7 @@
 
 const UI = (() => {
   const { el, fill } = DOM;
-  const SORTS = ['Chroma', 'Material', 'Department', 'Date'];
+  const SORTS = ['Palette', 'Material', 'Department', 'Date'];
   const NOTES = [
     'Kept verbatim — “as catalogued” is the museum’s own word for it',
     'Nine departments carry 98% — eight small ones share the last row',
@@ -82,7 +82,7 @@ const UI = (() => {
   function buildGlyphs() {
     // Rectangle, square, diamond, hexagon — how real tile sample books lay out.
     const shapes = [
-      'width:11px;height:15px;border:1.5px solid ',
+      'width:11px;height:15px;background:',
       'width:13px;height:13px;background:',
       'width:11px;height:11px;transform:rotate(45deg);background:',
       'width:14px;height:16px;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:',
