@@ -1,222 +1,134 @@
 <!DOCTYPE html>
-<html lang="en" class="no-js">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<title>The MET Ceramic Medium Look Book</title>
-		<link rel="stylesheet" type="text/css" href="style.css" />
-		<link href="https://fonts.googleapis.com/css?family=Work+Sans:400,600&display=swap" rel="stylesheet">
-		<script>
-			document.documentElement.className="js";
-			let supportsCssVars=function(){
-				let e,t=document.createElement("style");
-				return t.innerHTML="root: { --tmp-var: bold; }",
-						document.head.appendChild(t),
-						e=!!(window.CSS&&window.CSS.supports&&window.CSS.supports("font-weight","var(--tmp-var)")),
-						t.parentNode.removeChild(t),
-						e};
-			supportsCssVars()||alert("Please view this demo in a modern browser that supports CSS Variables.");
-		</script>
-		<script src="grouped_types.js"></script>
-		<script src="categorized_ceramics.js"></script>
-	</head>
-	<body class="lookbook">
-		<script src="js/scrollMonitor.js"></script>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ceramic Lookbook — The Metropolitan Museum of Art</title>
+<meta name="description" content="Every public-domain ceramic object in the Metropolitan Museum of Art, as one continuous field of colour.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=Libre+Baskerville:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/lookbook.css">
+</head>
+<body>
 
-		<div id="title" onclick="openInfo()">
-			<span>→</span><br>
-			<span id="title-text">The MET Ceramic Lookbook</span>
-		</div>
-		<div id="info">
-			<h3>The MET Ceramic Lookbook</h3>
-			<p>
-			<span> - a close lookup on the 9530 ceramic objects from the MET museum collection - </span><br>
-				<span> - scroll/click on tabs to go through all 9 types</span><br>
-				<span>       fritware, other/unspecified, terracotta, ceramic, pottery, earthenware, stoneware, clay, porcelain -</span><br>
-			<span> - click on each square to reveal a whole image and more details -</span><br>
-				<span id="closebtn" onclick="closeInfo()"> ← </span>
-			</p>
-		</div>
-		<script>
-			function openInfo() {
-				document.getElementById("info").style.width = "100%";
-				document.getElementById("title").style.display="none";
-			}
+<div class="lookbook">
+  <canvas id="field"></canvas>
 
-			function closeInfo() {
-				document.getElementById("info").style.width = "0px";
-				document.getElementById("title").style.display="block";
-			}
-		</script>
-		<main id="mainContent">
-			<nav class="frame menu menu--sebastian">
-				<ul class="frame__demos menu__list" id="mediumSelection">
-					<script>
-						const mediumData = Object.keys(alltypes);
-						for (let m=0;m<mediumData.length;m++){
-							console.log(m);
-							let tabContainer = document.createElement('li');
+  <!-- Every module scales together off one transform, so the paper furniture
+       keeps its proportions on short viewports instead of crowding the field. -->
+  <div id="ui">
 
-							tabContainer.setAttribute('class', "menu__item");
-							tabContainer.setAttribute('id',`tab_${mediumData[m]}`);
-							let mediumContainer = document.createElement('a');
-							mediumContainer.href=`#top_${ mediumData[m]}`;
-							mediumContainer.setAttribute('class','frame__demo');
-							mediumContainer.classList.add('menu__link');
-							mediumContainer.setAttribute('id',`name_${mediumData[m]}`);
-							mediumContainer.innerHTML=mediumData[m];
-							tabContainer.appendChild(mediumContainer)
-							document.getElementById("mediumSelection").appendChild(tabContainer);
-						};
-					</script>
-				</ul>
+    <div data-mod="1" class="module" style="left:28px;top:28px;width:232px;padding:18px 20px 16px">
+      <div style="font-family:'Bodoni Moda',serif;font-size:34px;line-height:1;color:#262623">Ceramic<br>Lookbook</div>
+      <div style="margin-top:12px;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:#928F86;line-height:1.9"><span id="totalObjects">&nbsp;</span> objects &#183; open access<br>The Metropolitan Museum of Art</div>
+    </div>
 
-			</nav>
-			<div class="content hidden">
-				<h2 class="content__title"></h2>
-				<span style="top:8em; right:5em; color:crimson; z-index: 102; position: absolute">[close]</span>
-			</div>
-			<!-- <div class="grid-wrap" id="gridWrapper"> -->
-				<div class="grid" id="gridContainer" medium="Ceramic"></div>
-					<script>
-						let setImmediate = (function() {
-							let fnsQueue = [],
-								hasSI = !!(window.setImmediate || window.msSetImmediate),
-								hasPM = window.addEventListener && window.postMessage
-							if (!hasSI && hasPM)
-								window.addEventListener('message', function(e) {
-									if (e.data === "sleipnirImmediate")
-										if (fnsQueue.length)
-											fnsQueue.shift()() // take the first fn from the array and execute it
-								}, false)
-							return window.setImmediate || window.msSetImmediate ||
-								(function() {
-									if (hasPM)
-										return function(fn) {
-											fnsQueue.push(fn)
-										}
-									return function(fn) {
-										setTimeout(fn, 0)
-									}
-								}())
-						}());
+    <div data-mod="1" class="module" id="sortPanel" style="z-index:11;right:28px;top:28px;width:254px">
+      <div id="sortHead" style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:11px 14px">
+        <span style="font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:#262623;flex:none">Sorted by</span>
+        <span id="sortCurrent" style="font-family:'Libre Baskerville',serif;font-size:12px;color:#262623;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></span>
+      </div>
+      <div id="sortBody" hidden style="border-top:1px solid #E4E0D7;padding:5px 0 6px"></div>
+    </div>
 
-						function renderItem() {
-							if (this.isInViewport) {
-								this.watchItem.style.backgroundImage = `url(https://d1tutlfztia4ba.cloudfront.net/resize-center/${this.watchItem.getAttribute('data-objId')}.png`;
-							}
-						}
+    <div data-mod="1" class="module" id="catPanel" style="right:28px;width:254px">
+      <div style="display:flex">
+        <div id="tabMat" class="tab">As catalogued</div>
+        <div id="tabDep" class="tab">Department</div>
+      </div>
+      <div id="catBody" hidden style="border-top:1px solid #E4E0D7;padding:5px 0 0">
+        <div id="catRows"></div>
+        <div id="tabNote" style="margin-top:5px;padding:8px 14px;border-top:1px solid #E4E0D7;font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:#928F86;line-height:1.8"></div>
+      </div>
+      <div style="padding:10px 14px;border-top:1px solid #E4E0D7;display:flex;justify-content:space-between;align-items:center;gap:10px">
+        <span style="font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:#928F86;line-height:1.7;max-width:150px"><span id="monoCount"></span> objects never photographed in colour</span>
+        <span id="monoBtn"></span>
+      </div>
+    </div>
 
-						function makeWatcher(element) {
-							let watcher = scrollMonitor.create(element);
-							watcher.enterViewport(renderItem);
-							renderItem.call(watcher);
-						}
+    <!-- The potter's wheel: four detents, four tessellations. The ring around
+         it is the palette, and doubles as the scrollbar. -->
+    <div data-mod="1" id="wheelWrap">
+      <div id="ringBase"></div>
+      <div id="glazeRing"></div>
+      <!-- The indicator is an arc, not a dot: a viewport covers a range of the
+           collection, and at this zoom that range is a visible slice of it. -->
+      <svg id="ringArc" viewBox="0 0 200 200" aria-hidden="true">
+        <circle id="ringArcPath" cx="100" cy="100" r="87" transform="rotate(-90 100 100)"></circle>
+      </svg>
+      <div id="wheelHit" style="position:absolute;left:26px;top:26px;width:148px;height:148px;touch-action:none">
+        <div id="wheelRing">
+          <div id="glyphs"></div>
+        </div>
+        <!-- The index mark rides on the hub and points out at whichever
+             tessellation is currently at the detent. -->
+        <div id="wheelPointer"></div>
+        <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:58px;height:58px;border-radius:50%;border:1px solid #D8D4CB;background:#FAF8F3;display:flex;align-items:center;justify-content:center;text-align:center;font-size:8px;letter-spacing:0.18em;text-transform:uppercase;color:#928F86;pointer-events:none">Lattice</div>
+      </div>
+    </div>
 
-						let container = document.getElementById('gridContainer');
+    <!-- The stub is a separate piece of paper from the sheet above it, joined
+         only by the perforation, because it is meant to come off in your hand.
+         tear.js owns the geometry of the join. -->
+    <div data-mod="1" id="receipt">
+      <div id="receiptSheet" class="tear-sheet">
+        <div style="padding:12px 14px 10px;border-bottom:1px dashed #BAB6AC;display:flex;justify-content:space-between">
+          <span style="font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:#262623">Field receipt</span>
+          <span id="receiptDate" style="font-size:8px;letter-spacing:0.12em;color:#928F86"></span>
+        </div>
+        <div id="receiptLines" style="padding:10px 14px 2px"></div>
+        <div style="padding:4px 14px 8px;display:flex;align-items:baseline;gap:8px">
+          <span id="countText" style="font-family:'Libre Baskerville',serif;font-size:26px;color:#262623"></span>
+          <span style="font-size:8px;letter-spacing:0.14em;text-transform:uppercase;color:#928F86">objects</span>
+        </div>
+        <div id="receiptFoot" style="padding:0 14px 12px;font-size:7.5px;letter-spacing:0.12em;text-transform:uppercase;color:#BAB6AC"></div>
+      </div>
+      <div id="stub" class="tear-stub" role="button" tabindex="0" hidden>&#9986; Pull across to tear off &#183; resets</div>
+    </div>
 
-						let frag = document.createDocumentFragment();
+    <div data-mod="1" style="pointer-events:auto;position:fixed;z-index:10;left:50%;bottom:32px;transform:translateX(-50%);display:flex;align-items:center;gap:16px">
+      <div id="seeAll" style="padding:10px 20px;background:#FAF8F3;border:1px solid #262623;box-shadow:0 8px 22px rgba(38,38,35,0.14);font-size:9px;letter-spacing:0.24em;text-transform:uppercase;color:#262623"></div>
+      <div class="hint">Ctrl / &#8984; + scroll to zoom</div>
+    </div>
 
-						function addItems() {
-							let elements = Array.prototype.slice.apply(frag.childNodes);
-							container.appendChild(frag);
-							elements.forEach(makeWatcher);
-						}
+    <div id="empty" hidden style="pointer-events:auto;position:fixed;z-index:9;left:50%;top:50%;transform:translate(-50%,-50%);background:#FAF8F3;border:1px solid #D8D4CB;box-shadow:0 14px 40px rgba(38,38,35,0.16);padding:28px 32px;text-align:center;max-width:320px">
+      <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#928F86;margin-bottom:12px">No objects</div>
+      <div style="font-family:'Libre Baskerville',serif;font-size:15px;line-height:1.6;color:#262623">The museum holds nothing catalogued this way.</div>
+      <div id="emptyReset" style="margin-top:16px;font-size:8px;letter-spacing:0.2em;text-transform:uppercase;color:#C05A38">&#9986; Tear the receipt off to reset</div>
+    </div>
+  </div>
 
-						let c=0;
-						function draw(){
-							for (let j=0;j<mediumData.length;j++) {
+  <div id="detail" hidden>
+    <div id="detailClose" class="key" style="position:fixed;top:26px;right:34px;z-index:5">esc</div>
+    <div id="detailPrev" class="key key--nav" style="position:fixed;left:28px;top:50%;transform:translateY(-50%);z-index:5">&#8592;</div>
+    <div id="detailNext" class="key key--nav" style="position:fixed;right:28px;top:50%;transform:translateY(-50%);z-index:5">&#8594;</div>
+    <div id="detailHint">
+      <span class="key key--mini">&#8592;</span><span class="key key--mini">&#8594;</span>
+      <span>to browse</span>
+      <span class="key key--mini">esc</span>
+      <span>to close</span>
+    </div>
+    <div id="detailBody" style="min-height:100%;display:flex;align-items:center;justify-content:center;align-content:center;padding:56px 80px;box-sizing:border-box;gap:60px 64px;flex-wrap:wrap"></div>
+  </div>
 
-								for (let i = 0; i < alltypes[mediumData[j]].length; i++) {
-									let itemContainer = document.createElement('div');
-									if (i === 0){
-										itemContainer.setAttribute('id',`top_${mediumData[j]}`);
-										itemContainer.setAttribute('data-isTop', 'true');
-									} else {
-										itemContainer.setAttribute('id',`end_${mediumData[j]}`);
-										itemContainer.setAttribute('data-isTop', 'false');
-									}
-									if (i===alltypes[mediumData[j]].length-1){
-										itemContainer.setAttribute('data-isBottom','true');
-									} else {
-										itemContainer.setAttribute('data-isBottom','false');
-									}
-									itemContainer.setAttribute('class', 'grid__item');
-									itemContainer.setAttribute('data-title', mediumData[j]);
-									itemContainer.setAttribute('data-medium', objects[alltypes[mediumData[j]][i]].origin);
-									itemContainer.setAttribute('data-objId', alltypes[mediumData[j]][i]);
-									itemContainer.setAttribute('data-surface', objects[alltypes[mediumData[j]][i]].surface);
-									itemContainer.style.backgroundRepeat='no-repeat';
-									itemContainer.style.backgroundSize='cover';
-									let item = document.createElement('div');
-									item.setAttribute('class', 'grid__item-inner');
-									itemContainer.appendChild(item);
-									frag.appendChild(itemContainer);
-									itemContainer.addEventListener('mouseEnter', function () {
-										document.getElementById(`tab_${mediumData[j]}`).classList.add('menu__item--current');
+  <div id="boot">
+    <div style="font-family:'Bodoni Moda',serif;font-size:26px;color:#262623">Ceramic Lookbook</div>
+    <div id="bootNote" style="margin-top:10px;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:#928F86">Unpacking the collection&#8230;</div>
+  </div>
+</div>
 
-									})
-									itemContainer.addEventListener('click',function () {
-										document.querySelector('.content').style.backgroundImage = `url(https://d1tutlfztia4ba.cloudfront.net/resizes/${alltypes[mediumData[j]][i]}.png`;
-										document.querySelector('.content__title').innerHTML = objects[alltypes[mediumData[j]][i]].origin;
-										document.querySelector('.content').classList.remove('hidden');
-										document.querySelector('.content').addEventListener('click',function () {
-											this.classList.add('hidden');
-										})
-									})
-									c+=1;
-								}
-
-
-							}
-							if (c===9530){
-								addItems();
-								setImmediate(function() {
-									scrollMonitor.recalculateLocations();
-								});
-							} else {
-								setImmediate(draw);
-							}
-
-						}
-						draw();
-						for (let j=0; j<mediumData.length; j++){
-							let currentType = document.getElementById(`tab_${mediumData[j]}`);
-							let firstItem = document.getElementById(`top_${mediumData[j]}`);
-							let lastItem = document.getElementById(`end_${mediumData[j]}`);
-							let typeWatcher = scrollMonitor.create(firstItem);
-							let typeEndWatcher = scrollMonitor.create(lastItem);
-							typeEndWatcher.stateChange(function(){
-								if (typeEndWatcher.isInViewport && typeWatcher.isAboveViewport){
-									currentType.classList.add('menu__item--current');
-									currentType.style.backgroundColor="#d94f5c"
-								} else if (typeEndWatcher.isAboveViewport){
-									currentType.classList.remove('menu__item--current');
-									currentType.style.backgroundColor="none";
-								}
-							})
-						}
-					</script>
-			</div>
-		</main>
-		<div class="cursor">
-			<div class="cursor__inner"></div>
-		</div>
-		<script>
-			let cursor = document.querySelector('.cursor');
-			document.addEventListener('mousemove', e => {
-				cursor.setAttribute("style", "top: "+(e.pageY - 10)+"px; left: "+(e.pageX - 10)+"px;")
-			})
-			let hideContent = document.querySelector('.content').classList.contains('hidden');
-			cursor.classList.add(hideContent?'cursor__inner--circle':'cursor__inner--cross');
-			// cursor.classList.remove(hideContent?'cursor__inner--cross':'cursor__inner--circle');
-			if (!hideContent){
-				let closeHint =  document.createElement('span');
-				closeHint.setAttribute("class", "cursor__inner");
-				closeHint.classList.add("cursor__inner--text");
-				closeHint.innerHTML="click to close";
-				cursor.appendChild(closeHint);
-			}
-		</script>
-	</body>
+<!-- GSAP, vendored rather than hotlinked: the tear is a drag gesture inside a
+     scaled ancestor, and Draggable is what gets that arithmetic right. -->
+<script src="js/vendor/gsap.min.js"></script>
+<script src="js/vendor/Draggable.min.js"></script>
+<script src="js/dom.js"></script>
+<script src="js/data.js"></script>
+<script src="js/atlas.js"></script>
+<script src="js/grid.js"></script>
+<script src="js/tear.js"></script>
+<script src="js/detail.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+</body>
 </html>

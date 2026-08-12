@@ -1,0 +1,479 @@
+/* The Ceramic Lookbook — printed-ephemera design language.
+   Paper stock #F3F1EC, card stock #FAF8F3, ink #262623, stamp red #C05A38. */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #F3F1EC;
+}
+
+body {
+  cursor: url('../cursor.png') 8 8, auto;
+  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Every panel here is shown and hidden with the hidden attribute, and the
+   rule behind it is a user-agent one — so any author display rule on the same
+   element silently outranks it and the thing never goes away. */
+[hidden] { display: none !important; }
+
+a { color: #262623; }
+a:hover { color: #C05A38; }
+::selection { background: #C05A38; color: #F3F1EC; }
+
+@keyframes fadein { from { opacity: 0 } to { opacity: 1 } }
+@keyframes cardin {
+  from { opacity: 0; transform: translateY(16px) rotate(-1.4deg) }
+  to   { opacity: 1; transform: translateY(0) rotate(-1.4deg) }
+}
+@keyframes cardin2 {
+  from { opacity: 0; transform: translateY(16px) }
+  to   { opacity: 1; transform: translateY(0) }
+}
+
+.lookbook {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #F3F1EC;
+}
+
+#field {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  display: block;
+}
+
+/* The modules float over the field. #ui carries a single scale transform so
+   they hold their proportions on short viewports; pointer events are handed
+   back module by module. */
+#ui {
+  position: fixed;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.module {
+  pointer-events: auto;
+  position: fixed;
+  z-index: 10;
+  box-sizing: border-box;
+  background: #FAF8F3;
+  border: 1px solid #D8D4CB;
+  box-shadow: 0 12px 30px rgba(38, 38, 35, 0.14);
+}
+
+#catPanel { transition: top .25s ease; }
+
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 11px 4px;
+  font-size: 8.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #928F86;
+}
+.tab.on {
+  color: #262623;
+  box-shadow: inset 0 -2px 0 #C05A38;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 14px;
+  gap: 8px;
+}
+.row .count {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: #928F86;
+}
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex: none;
+  border: 1px solid #D8D4CB;
+}
+.dot.on {
+  background: #C05A38;
+  border-color: #C05A38;
+}
+
+/* A tear wants two pieces of paper, not one with a dashed line drawn across
+   it. The sheet carries 28px of stock below the perforation that is always
+   clipped away — it is the slack the sheet bends into while the split travels,
+   and it costs no layout because the margin takes it straight back. The pieces
+   drop-shadow rather than box-shadow so the shadow follows the torn edge.
+   Each sheet and stub drops the border along its own seam separately: that
+   edge is not printed, it is torn, so it is declared where the border is. */
+.tear-sheet {
+  position: relative;
+  margin-bottom: -28px;
+}
+.tear-stub {
+  position: relative;
+  margin-top: -5px;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+/* Everything printed or torn along the seam. The overlay is a child of the
+   piece it belongs to, so the clip takes the outer half of each stroke and
+   leaves the inner half showing — which is how a torn edge catches the light,
+   and how the last perforation before the split ends mid-dash. */
+.tear-fringe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  fill: none;
+}
+.tear-fibre {
+  stroke: #FFFDF7;
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+}
+.tear-perf {
+  stroke: var(--perf, #ADA79A);
+  stroke-width: 1;
+  stroke-dasharray: 3.5 4.5;
+}
+
+/* The receipt sits slightly off-square, the way a slip of paper does. The
+   wrapper carries nothing but that tilt and the depth the stub turns in. */
+#receipt {
+  pointer-events: auto;
+  position: fixed;
+  z-index: 10;
+  left: 28px;
+  bottom: 32px;
+  width: 240px;
+  transform: rotate(-0.6deg);
+  perspective: 800px;
+  /* Column, not blocks: the sheet and the stub both pull themselves up over
+     the seam with negative margins, and adjoining block margins collapse to
+     the more negative of the two instead of adding up. Flex items don't. */
+  display: flex;
+  flex-direction: column;
+}
+#receiptSheet {
+  background: #FAF8F3;
+  border: 1px solid #D8D4CB;
+  border-bottom: 0;
+  padding-bottom: 28px;
+  filter: drop-shadow(0 12px 26px rgba(38, 38, 35, 0.15));
+}
+#receipt .line {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+  align-items: baseline;
+}
+#receipt .line .k {
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #928F86;
+  flex: none;
+}
+#receipt .line .v {
+  font-family: 'Libre Baskerville', Georgia, serif;
+  font-size: 11.5px;
+  color: #262623;
+  text-align: right;
+  line-height: 1.4;
+}
+#stub {
+  background: #FAF8F3;
+  border: 1px solid #D8D4CB;
+  border-top: 0;
+  padding: 14px 14px 9px;
+  text-align: center;
+  font-size: 8px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #C05A38;
+  filter: drop-shadow(0 9px 18px rgba(38, 38, 35, 0.14));
+}
+#stub:focus-visible {
+  outline: 1px solid #C05A38;
+  outline-offset: -3px;
+}
+
+/* The instruction sits on the field rather than on paper, so it needs its own
+   ground -- over a dark glaze it was reading as noise. */
+.hint {
+  background: rgba(250, 248, 243, 0.92);
+  border: 1px solid #D8D4CB;
+  box-shadow: 0 8px 22px rgba(38, 38, 35, 0.10);
+  padding: 9px 14px;
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #6E6C64;
+}
+
+/* Centred on the same axis as the sort and catalogue panels above it:
+   those are right:28px by 254px wide, so their centre line is 155px in. */
+#wheelWrap {
+  pointer-events: auto;
+  position: fixed;
+  z-index: 11;
+  right: 55px;
+  bottom: 40px;
+  width: 200px;
+  height: 200px;
+  transition: opacity .4s ease;
+}
+#wheelPointer {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 7px solid #C05A38;
+  /* Base on the hub's edge (r=29), tip out towards the glyphs (r=53). */
+  transform: translate(-50%, -50%) translateY(-32.5px);
+  pointer-events: none;
+}
+#wheelWrap.faded {
+  opacity: 0.12;
+  pointer-events: none;
+}
+/* The palette reads as a thin band of glaze laid on a paper ring, so it sits
+   with the dial rather than competing with it. */
+#ringBase {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  /* 20px leaves the paper ring clear of the dial's 148px face, so the two read
+     as separate objects with the field showing between them. Hairlines on both
+     edges keep that gap looking deliberate. */
+  border: 20px solid #FAF8F3;
+  border-radius: 50%;
+  box-shadow: 0 10px 26px rgba(38, 38, 35, 0.12), 0 0 0 1px #E4E0D7, inset 0 0 0 1px #E4E0D7;
+  touch-action: none;
+}
+#glazeRing {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  /* A 4px band riding near the outer edge of the paper, not filling it. */
+  -webkit-mask: radial-gradient(circle farthest-side, transparent 92.5%, #000 93%, #000 97%, transparent 97.5%);
+  mask: radial-gradient(circle farthest-side, transparent 92.5%, #000 93%, #000 97%, transparent 97.5%);
+}
+#ringArc {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+#ringArcPath {
+  fill: none;
+  stroke: #262623;
+  stroke-width: 4.5;
+  stroke-linecap: round;
+}
+#wheelRing {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid #D8D4CB;
+  background: radial-gradient(circle at 50% 38%, #FDFCF9, #F5F2EB);
+  box-shadow: 0 12px 30px rgba(38, 38, 35, 0.18), inset 0 1px 4px rgba(38, 38, 35, 0.08);
+}
+#wheelRing.settling {
+  transition: transform .3s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.glyph {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 30px;
+  height: 30px;
+  margin: -15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Detail: the field stays visible but frosted, so an object reads against the
+   colour it came from. */
+#detail {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(243, 241, 236, 0.7);
+  backdrop-filter: blur(34px) saturate(1.1);
+  -webkit-backdrop-filter: blur(34px) saturate(1.1);
+  overflow: auto;
+  animation: fadein .22s ease;
+}
+#detail .plate {
+  background: #FCFBF8;
+  padding: 24px 24px 58px;
+  transform: rotate(-1.4deg);
+  box-shadow: 0 24px 60px rgba(38, 38, 35, 0.22);
+  animation: cardin .4s ease;
+}
+/* The card and the coupon under it are one printed sheet until you take the
+   coupon off, so they share a stack rather than each floating on their own. */
+#detail .card-stack {
+  width: 360px;
+  perspective: 900px;
+  animation: cardin2 .45s ease;
+  display: flex;
+  flex-direction: column;
+}
+#detail .card {
+  --perf: #C6C0B4;
+  background: #EFECE5;
+  border: 1px solid #D8D4CB;
+  border-bottom: 0;
+  padding: 22px 24px 46px;
+  position: relative;
+  filter: drop-shadow(0 16px 38px rgba(38, 38, 35, 0.16));
+}
+#detail .coupon {
+  display: block;
+  background: #EFECE5;
+  border: 1px solid #D8D4CB;
+  border-top: 0;
+  padding: 17px 24px 12px;
+  text-align: center;
+  font-size: 8px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: #262623;
+  filter: drop-shadow(0 12px 26px rgba(38, 38, 35, 0.14));
+}
+#detail .coupon:hover { color: #C05A38; }
+#detail .coupon:focus-visible {
+  outline: 1px solid #C05A38;
+  outline-offset: -3px;
+}
+#detail .card .field {
+  padding: 7px 0;
+  border-top: 1px solid #D8D4CB;
+}
+#detail .card .field .k {
+  font-size: 8px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #928F86;
+  margin-bottom: 3px;
+}
+#detail .card .field .v {
+  font-family: 'Libre Baskerville', Georgia, serif;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #33322E;
+}
+#detail .attrs {
+  flex-basis: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 52px;
+  animation: cardin2 .5s ease;
+}
+
+/* Keycaps, because these actions are all reachable from the keyboard and the
+   overlay should say so rather than imply it with a bare glyph. */
+.key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 34px;
+  height: 26px;
+  padding: 0 9px;
+  background: #FAF8F3;
+  border: 1px solid #BAB6AC;
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #262623;
+}
+.key--nav {
+  min-width: 42px;
+  height: 38px;
+  font-size: 16px;
+  letter-spacing: 0;
+  color: #6E6C64;
+}
+.key--mini {
+  min-width: 22px;
+  height: 19px;
+  padding: 0 5px;
+  font-size: 8px;
+  border-bottom-width: 1.5px;
+}
+#detailHint {
+  position: fixed;
+  left: 50%;
+  bottom: 26px;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(250, 248, 243, 0.92);
+  border: 1px solid #D8D4CB;
+  box-shadow: 0 8px 22px rgba(38, 38, 35, 0.10);
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #6E6C64;
+  white-space: nowrap;
+}
+
+#boot {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #F3F1EC;
+  text-align: center;
+  transition: opacity .4s ease;
+}
+#boot.gone {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #detail, #detail .plate, #detail .card-stack, #detail .attrs { animation: none }
+  #wheelRing.settling, #catPanel { transition: none }
+  /* tear.js checks the same query and leaves the paper alone: no drag, no
+     swing, no fall — the stub is simply a button that does the thing. */
+}

@@ -1,0 +1,195 @@
+# Pipeline
+
+Rebuilds the lookbook's dataset from the MET Open Access CSV. Every stage is
+idempotent and resumable, and nothing here depends on a service that can
+expire. See `../PLAN.md` for the reasoning.
+
+## Status
+
+| Stage | Script | State |
+|---|---|---|
+| 1 — mine the CSV | `mine.py` | **done** |
+| gate — validate the rules | `validate.py` | **passing** |
+| 2 — fetch image URLs + metadata | `fetch.py` | **done** — 51,976 usable |
+| 3 — crop, resize, measure colour | `tiles.py` | **done** — 51,976 measured, 44,305 tiled |
+| 3b — crop quality control | `qc.py` | **tuned** — 6.4% reject, 16.4% mono |
+| 4 — extract colour | — | folded into stage 3, one pass |
+| 5 — pack atlases | `atlas.py` | **done** — 101 sheets, 78.8 MB |
+| 6 — emit site data | `emit.py` | **done** — 44,305 objects |
+
+Stage 3 wrote every crop to `cache/tiles/96/` and `cache/tiles/40/` — 44,305
+each. Stage 5 packs the 96px tier into `data/atlas/`, and the grid blits from
+those sheets.
+
+**Order matters between stages 5 and 6.** `emit.py` sorts the payload into the
+palette sweep, and `atlas.py` packs in that same order by reading `grid.bin`'s
+own id column. That is what keeps a screenful of the default view inside one
+or two sheets instead of twenty. Re-running `emit.py` therefore invalidates the
+atlas, so run them in order:
+
+```sh
+python3 pipeline/emit.py
+python3 pipeline/atlas.py
+```
+
+`atlas.json` records the object count and the first and last ids; the browser
+checks them against `grid.bin` and falls back to flat colour rather than
+drawing a stale packing.
+
+The 40px tier is still unused. It exists for a fast-scroll tier that the canvas
+renderer has not needed: sheets that are not resident draw as the object's
+measured colour, which is a better placeholder than a blurrier tile.
+
+## Running
+
+```sh
+python3 pipeline/validate.py          # must PASS before anything else runs
+python3 pipeline/mine.py              # downloads the CSV to cache/ on first run
+python3 pipeline/mine.py --cap-per-type 10000
+python3 pipeline/emit.py               # rebuilds data/ for the site
+```
+
+`emit.py` reads `data/colours.jsonl`, `data/candidates.jsonl` and
+`data/api_objects.jsonl` (plain or `.gz`) and writes `../data/`: `grid.bin`
+(736 KB, one columnar record per object), `meta.json`, and 44 detail shards
+that are fetched only when a tile is opened. Re-run it whenever stage 3
+extends `colours.jsonl`.
+
+`mine.py` caches the 318 MB CSV in `cache/` and reuses it. Delete it to refresh.
+
+### Stage 2 without leaving a laptop on
+
+The crawl takes ~7 hours at a polite rate. Two ways to run it:
+
+**On GitHub's runners** — Actions tab → *Stage 2 — fetch MET metadata* → Run
+workflow, with `rebuild-2026` selected as the branch. Or from the CLI:
+
+```sh
+gh api -X POST \
+  repos/azuic/the-met-ceramics-lookbook/actions/workflows/fetch.yml/dispatches \
+  -f ref=rebuild-2026 -f 'inputs[max_runtime]=17400'
+```
+
+State lives in `data/api_objects.jsonl.gz`, committed back to the branch after
+each run, so runs chain across machines. Needs ~2 runs.
+
+The workflow file is duplicated onto `master`. That is not an accident:
+GitHub refuses to register a `workflow_dispatch` trigger unless the workflow
+exists on the repository's default branch. Runs still execute the copy on
+whichever branch they target.
+
+`schedule:` is deliberately not used: GitHub only fires scheduled workflows
+from the repository's **default** branch (`master` here), so it would silently
+never run while this work lives on `rebuild-2026`.
+
+**Locally, surviving a closed lid:**
+
+```sh
+caffeinate -is python3 pipeline/fetch.py
+```
+
+Either way it is resumable. Interrupting it costs only the in-flight request.
+
+### Rate limits — measured, not guessed
+
+The API sits behind Imperva and is genuinely aggressive:
+
+| concurrency | result |
+|---|---|
+| 4 | ~12 req/s, occasional 403 |
+| 8 | **403 on every request** |
+| after a burst | IP soft-banned; recovers in ~30s once traffic stops |
+
+The apparent "98 req/s" at concurrency 8 is 80 fast rejections, not
+throughput. `fetch.py` is therefore serial with a self-tuning delay and a
+backoff. Bursting does not make it faster, it makes it stop. Please do not
+raise the rate to be clever — it is someone's free public API.
+
+Measured on GitHub runners, which are throttled harder than a home
+connection:
+
+| pacing | 403s | effective |
+|---|---|---|
+| fixed 0.18s | 4 in 7 min | 1.34 req/s |
+| adaptive, from 0.30s | 1 in 13 min | 1.66 req/s |
+
+The adaptive pacer settles around **0.31s** (~3.2 req/s attempted, ~1.7 req/s
+sustained once latency is counted). Request latency is now roughly equal to
+the delay, so the remaining ceiling is round-trip time, not the WAF.
+
+Full crawl took ~8 hours of runner time spread over 20 scheduled runs,
+finishing 2026-08-10.
+
+**Outcome**
+
+| | count |
+|---|---:|
+| candidates from stage 1 | 51,913 |
+| gone — API returns 404 | 270 |
+| fetched but no public image | 122 |
+| **usable, with imagery** | **51,521** (99.2%) |
+
+The 270 are in the CSV but the API no longer serves them: deaccessioned,
+merged or renumbered since the snapshot. They are recorded as tombstones
+(`{"objectID": …, "gone": true}`) so re-runs stop retrying them — without
+that the crawl never reports complete and a scheduled workflow re-asks the
+same dead IDs forever, which is exactly what happened for two days.
+
+Note that a local run writes `data/api_objects.jsonl.gz` too, so if CI has
+committed since, discard the local copy (`git checkout --`) before pulling —
+the merge on next start will pick everything up by object ID anyway.
+
+## Files
+
+| Path | Committed | Why |
+|---|---|---|
+| `classify.py` | yes | the rules |
+| `validate.py` | yes | the gate |
+| `mine.py` | yes | stage 1 |
+| `data/legacy_2019.json` | **yes** | 2019 ground truth, extracted from the old `categorized_ceramics.js`. Irreplaceable — the gate depends on it. |
+| `data/mine_summary.json` | yes | small; records what a run produced |
+| `data/candidates.jsonl` | no | 23 MB, regenerates in ~40s |
+| `cache/` | no | 318 MB CSV + downloaded imagery |
+
+## The validation gate
+
+`validate.py` asks two questions separately, because one combined accuracy
+number would let them hide each other:
+
+1. **Fidelity** — does a deliberately naive reconstruction of the *2019* rules
+   reproduce the *2019* labels? Currently **99.11%**, threshold 99%. This
+   tests whether we understood the original at all.
+2. **Attribution** — where the *new* rules disagree with 2019, is every
+   disagreement explained? Currently **0 unattributed**. Disagreements are
+   sorted into: caused by a keyword we deliberately added; a 2019 false
+   positive we now reject; a 2019 label its own medium string never supported;
+   or a documented priority-order decision.
+
+An unattributed disagreement fails the gate. That is the point.
+
+## Known 2019 bugs, fixed rather than reproduced
+
+- **`unglaze` was inverted.** All 1,014 objects carrying it were *glazed* —
+  none were unglazed. The label meant the opposite of the truth.
+- **`unsepcified`** was a typo bucket holding 730 objects alongside the
+  correctly spelled `unspecified`. Merged.
+- **Limestone catalogued as earthenware** — 12 ostraca reading `"Limestone
+  with ink inscription"`. Now rejected as non-ceramic.
+- **Plaster, stone, glass, stucco and empty media** were included as ceramics.
+  31 objects, now rejected.
+
+## Substring traps
+
+Short keywords are dangerous against free-text medium strings. Measured, real:
+
+| Pattern | Wrongly matched |
+|---|---|
+| `tile` | `Textiles` — 7,977 woven textiles |
+| `paste` | `pasted onto`, `paste-resist dyeing` — prints and kimono |
+| `ware` | `hardware` |
+| `in[- ]?glaz` | `tin glaze` |
+| `gres` | `"Ingres"` paper |
+| `jasper`, `basalt`, `parian` | the minerals, and Parian marble |
+| `sgraffito` | a drawing technique on paper |
+
+Guards live in `classify.py`. Do not loosen them without re-running the gate.
