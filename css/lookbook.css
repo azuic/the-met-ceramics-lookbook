@@ -402,6 +402,9 @@ a:hover { color: #C05A38; }
 
 /* Keycaps, because these actions are all reachable from the keyboard and the
    overlay should say so rather than imply it with a bare glyph. */
+/* Flat outlines rather than keycaps: no ground, no weighted bottom edge, just
+   the rule around the label. The overlay is already frosted paper, so a filled
+   button was a second surface laid on a surface. */
 .key {
   display: inline-flex;
   align-items: center;
@@ -410,14 +413,19 @@ a:hover { color: #C05A38; }
   min-width: 34px;
   height: 26px;
   padding: 0 9px;
-  background: #FAF8F3;
+  background: transparent;
   border: 1px solid #BAB6AC;
-  border-bottom-width: 2px;
-  border-radius: 5px;
+  border-radius: 4px;
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
   font-size: 9px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
+  color: #262623;
+  transition: border-color .15s ease, color .15s ease;
+}
+/* Without a ground to press, the outline is what has to answer the pointer. */
+.key:hover {
+  border-color: #6E6C64;
   color: #262623;
 }
 .key--nav {
@@ -432,7 +440,7 @@ a:hover { color: #C05A38; }
   height: 19px;
   padding: 0 5px;
   font-size: 8px;
-  border-bottom-width: 1.5px;
+  border-color: #C9C5BB;
 }
 #detailHint {
   position: fixed;
@@ -443,16 +451,20 @@ a:hover { color: #C05A38; }
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 14px;
-  background: rgba(250, 248, 243, 0.92);
-  border: 1px solid #D8D4CB;
-  box-shadow: 0 8px 22px rgba(38, 38, 35, 0.10);
+  /* A hint should sit under everything else in the room: no card, no shadow,
+     just the words on the frost. */
+  padding: 7px 12px;
+  background: rgba(250, 248, 243, 0.5);
+  border: 1px solid rgba(216, 212, 203, 0.55);
   font-size: 8px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #6E6C64;
+  color: #928F86;
   white-space: nowrap;
 }
+/* The mini caps ride inside the hint, so they lighten with it. */
+#detailHint .key--mini { color: #6E6C64; }
+#detailHint .key--mini:hover { border-color: #C9C5BB; }
 
 #boot {
   position: fixed;
