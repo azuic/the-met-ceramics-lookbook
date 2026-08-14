@@ -263,14 +263,16 @@ a:hover { color: #C05A38; }
    with the dial rather than competing with it. */
 #ringBase {
   position: absolute;
-  /* The ring is drawn from the outside in: inset pulls its outer edge to r=94
-     and the border sets how much paper there is, so thinning the band keeps
-     the 6px of field between it and the dial's 148px face rather than opening
-     the two apart. Hairlines on both edges, in the same #D8D4CB the panels and
-     the dial use, so the ring is trimmed like everything else on screen. */
-  inset: 6px;
+  /* Drawn from the outside in: inset pulls the outer edge to r=90 and the
+     border says how much paper there is, so thinning the band keeps the 6px of
+     field between it and the dial's 148px face rather than opening the two
+     apart. 10px of paper, laid out from the inside: 2 paper, 3 arc, 1.5 gap,
+     2 glaze, 1.5 paper. The two 1.5s are the same measure on purpose — the
+     indicator sits off the glaze by exactly what the glaze sits off the edge.
+     Hairlines in the same #D8D4CB the panels and the dial use. */
+  inset: 10px;
   box-sizing: border-box;
-  border: 14px solid #FAF8F3;
+  border: 10px solid #FAF8F3;
   border-radius: 50%;
   box-shadow: 0 8px 22px rgba(38, 38, 35, 0.10), 0 0 0 1px #D8D4CB, inset 0 0 0 1px #D8D4CB;
   touch-action: none;
@@ -280,11 +282,10 @@ a:hover { color: #C05A38; }
   inset: 0;
   border-radius: 50%;
   pointer-events: none;
-  /* A 2px band near the outer edge of the paper, which now ends at r=94: the
-     glaze runs r89.5–91.5 and leaves 2.5px of paper outside it. Percentages
-     are of the 100px half-box, not of the ring. */
-  -webkit-mask: radial-gradient(circle farthest-side, transparent 89.1%, #000 89.5%, #000 91.5%, transparent 91.9%);
-  mask: radial-gradient(circle farthest-side, transparent 89.1%, #000 89.5%, #000 91.5%, transparent 91.9%);
+  /* A 2px band at r86.5–88.5, leaving 1.5px of paper outside it before the
+     edge at r90. Percentages are of the 100px half-box, not of the ring. */
+  -webkit-mask: radial-gradient(circle farthest-side, transparent 86.1%, #000 86.5%, #000 88.5%, transparent 88.9%);
+  mask: radial-gradient(circle farthest-side, transparent 86.1%, #000 86.5%, #000 88.5%, transparent 88.9%);
 }
 #ringArc {
   position: absolute;
@@ -295,13 +296,14 @@ a:hover { color: #C05A38; }
   overflow: visible;
 }
 /* The range indicator was ink at 4.5px, which made the loudest mark on screen
-   the scrollbar. It takes the hairline grey the dial's own inner circle is
-   drawn in, at 3px: still the widest rule in the module, so it reads as the
-   one moving part, without out-shouting the collection behind it. It runs at
-   r=87, inside the glaze and clear of it. */
+   the scrollbar. It is drawn in the grey an unselected lattice glyph uses, so
+   the two idle marks in the module weigh the same, at 3px so it still reads as
+   the one moving part. It runs at r=83.5, inside the glaze and clear of it by
+   the same 1.5px the glaze clears the paper's edge. The radius lives on the
+   element; ui.js reads it rather than repeating it. */
 #ringArcPath {
   fill: none;
-  stroke: #D8D4CB;
+  stroke: #BAB6AC;
   stroke-width: 3;
   stroke-linecap: round;
 }

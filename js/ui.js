@@ -233,7 +233,10 @@ const UI = (() => {
     // The arc runs along the inside of the glaze band, from where the viewport
     // starts to where it ends. A floor keeps it visible when the collection is
     // long enough that the true slice would be a couple of pixels.
-    const C = 2 * Math.PI * 87;
+    // Taken off the element rather than written down again here: the radius is
+    // a drawing decision, and a copy of it in this file goes stale silently —
+    // the dashes would just quietly stop spanning the circle.
+    const C = 2 * Math.PI * n.ringArc.r.baseVal.value;
     // The floor is what makes it read as an arc rather than a straight nub:
     // 6% subtends about 22 degrees, enough for the curve to be visible.
     const len = Math.max(0.06, Math.min(1, S.scrollSpan)) * C;
