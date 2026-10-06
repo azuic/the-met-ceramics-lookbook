@@ -17,7 +17,10 @@
  * The rule that avoids it: rank the sheets by how much of the screen each one
  * covers, hold exactly as many as the budget allows, and leave the rest flat.
  * Coverage that is partial but stable reads far better than coverage that is
- * complete but flickering.
+ * complete but flickering. Small cells use a separate 16px tier instead: the
+ * whole collection fits in 43 MiB and is fetched only on zoom-out. Its memory
+ * is reserved inside the same budget; loaded previews remain a fallback when
+ * returning to full crops.
  *
  * An earlier version held the frame's whole set or nothing at all, falling back
  * to the pure colour field past a hardcoded 14 sheets. That is a defensible
@@ -28,13 +31,12 @@
 
 const Atlas = (() => {
   /* Decoded sheets are the memory that matters — a 2016px sheet is 16 MB of
-   * RGBA, so the budget buys ~15 of them, which covers a full screen at the
-   * smallest cell size that still draws crops. In-flight sheets can overshoot
-   * it by at most MAX_INFLIGHT before the next frame trims back. */
+   * RGBA. The budget covers both tiers. In-flight sheets can overshoot it by
+   * at most MAX_INFLIGHT before the next frame trims back. */
   const BUDGET = (navigator.deviceMemory && navigator.deviceMemory < 4)
     ? 96 * 1024 * 1024
     : 256 * 1024 * 1024;
-  const MIN_RESIDENT = 4;
+  const MIN_RESIDENT = 1;
   const MAX_RESIDENT = 48;
   const MAX_INFLIGHT = 4;
 
@@ -49,6 +51,8 @@ const Atlas = (() => {
     clock: 0,
     cap: MIN_RESIDENT,
     onload: null,
+    small: false,
+    preview: { sheets: new Map(), pending: new Set(), failed: new Set(), need: new Map() },
   };
 
   async function load(onload) {
@@ -80,10 +84,17 @@ const Atlas = (() => {
   function capacity() {
     const px = S.index.cols * S.index.tile;
     const bytes = px * px * 4;
-    return Math.max(MIN_RESIDENT, Math.min(MAX_RESIDENT, Math.floor(BUDGET / bytes)));
+    // Reserve the complete tiny tier inside the existing memory budget. It
+    // stays resident through sorting/filtering instead of flickering under LRU.
+    const reserve = S.index.preview ? S.index.preview.decodedBytes : 0;
+    return Math.max(MIN_RESIDENT, Math.min(MAX_RESIDENT, Math.floor((BUDGET - reserve) / bytes)));
   }
 
-  function beginFrame() { S.need.clear(); }
+  function beginFrame(small = false) {
+    S.small = small;
+    S.need.clear();
+    S.preview.need.clear();
+  }
 
   /* Rank by coverage, keep the top of the ranking, evict from outside it first,
    * and fetch only what is being kept. Ranking by coverage rather than by
@@ -91,6 +102,14 @@ const Atlas = (() => {
    * the sheets holding the most visible cells win, whatever their number. */
   function endFrame() {
     if (!S.ready) return;
+
+    // No thumbnail downloads at startup. At small scales these are the only
+    // sheets requested; four shared slots bound the work even mid-zoom.
+    const P = S.preview;
+    for (const [n] of [...P.need].sort((a, b) => b[1] - a[1] || a[0] - b[0])) {
+      if (S.pending.size + P.pending.size >= MAX_INFLIGHT) break;
+      if (!P.sheets.has(n) && !P.pending.has(n) && !P.failed.has(n)) requestPreview(n);
+    }
 
     const ranked = [...S.need.entries()]
       .sort((a, b) => (b[1] - a[1]) || (a[0] - b[0]))
@@ -112,7 +131,7 @@ const Atlas = (() => {
     }
 
     for (const n of ranked) {
-      if (S.pending.size >= MAX_INFLIGHT) break;
+      if (S.pending.size + P.pending.size >= MAX_INFLIGHT) break;
       if (!S.keep.has(n) || S.sheets.has(n) || S.pending.has(n) || S.failed.has(n)) continue;
       request(n);
     }
@@ -130,7 +149,10 @@ const Atlas = (() => {
     // Remember the failure. Without this a missing sheet is re-requested on
     // every single frame, forever, because nothing else records that it was
     // ever tried.
-    img.onerror = () => { S.pending.delete(n); S.failed.add(n); };
+    img.onerror = () => {
+      S.pending.delete(n); S.failed.add(n);
+      if (S.onload) S.onload();
+    };
     img.src = 'data/atlas/' + String(n).padStart(3, '0') + '.webp';
   }
 
@@ -139,9 +161,17 @@ const Atlas = (() => {
    * endFrame decides what to do about it. */
   function tile(i) {
     if (!S.ready) return null;
+    const preview = previewTile(i);
+    if (S.small) return preview || residentTile(i);
     const per = S.index.perSheet;
     const n = (i / per) | 0;
     S.need.set(n, (S.need.get(n) || 0) + 1);
+    return residentTile(i) || preview;
+  }
+
+  function residentTile(i) {
+    const per = S.index.perSheet;
+    const n = (i / per) | 0;
     const sheet = S.sheets.get(n);
     if (!sheet) return null;
     sheet.used = ++S.clock;
@@ -153,6 +183,35 @@ const Atlas = (() => {
       sy: ((k / S.index.cols) | 0) * t,
       size: t,
     };
+  }
+
+  function previewTile(i) {
+    const spec = S.index.preview;
+    if (!spec) return null;
+    const P = S.preview, n = (i / spec.perSheet) | 0;
+    if (S.small) P.need.set(n, (P.need.get(n) || 0) + 1);
+    const img = P.sheets.get(n);
+    if (!img) return null;
+    const k = i % spec.perSheet;
+    return { img, sx: (k % spec.cols) * spec.tile,
+      sy: ((k / spec.cols) | 0) * spec.tile, size: spec.tile };
+  }
+
+  function requestPreview(n) {
+    const P = S.preview;
+    P.pending.add(n);
+    const img = new Image();
+    img.decoding = 'async';
+    img.onload = () => {
+      P.pending.delete(n);
+      P.sheets.set(n, img);
+      if (S.onload) S.onload();
+    };
+    img.onerror = () => {
+      P.pending.delete(n); P.failed.add(n);
+      if (S.onload) S.onload();
+    };
+    img.src = 'data/atlas-preview/' + String(n).padStart(3, '0') + '.webp';
   }
 
   /* The source rectangle that fills a dw x dh destination without distorting

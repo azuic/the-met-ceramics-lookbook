@@ -36,9 +36,21 @@ python3 pipeline/atlas.py
 checks them against `grid.bin` and falls back to flat colour rather than
 drawing a stale packing.
 
-The 40px tier is still unused. It exists for a fast-scroll tier that the canvas
-renderer has not needed: sheets that are not resident draw as the object's
-measured colour, which is a better placeholder than a blurrier tile.
+`atlas.py` also produces `data/atlas-preview/`: 16px crops packed into 11 small
+WebP sheets (2.85 MB total for this dataset). This tier is requested only when
+zooming to cells of 24px or smaller. It stays resident within the existing atlas
+memory budget and can supply a fallback when zooming back in. Overview no longer
+requires the 96px sheets; flat colour appears only while imagery is unavailable.
+The first view requests no preview images, and both tiers share four request slots.
+
+Rebuild just the preview tier from the published 96px sheets, without the crop cache:
+
+```sh
+python3 pipeline/atlas.py --preview-only
+```
+
+Both tiers use the same object order and packing guard. Re-run the full atlas
+pipeline after `emit.py` changes the dataset. The older 40px crop cache is unused.
 
 ## Running
 

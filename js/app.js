@@ -11,7 +11,7 @@ const App = (() => {
     tearing: false, count: 0, scrollStart: 0, scrollSpan: 1, overview: false, detailK: -1,
   };
 
-  let buffer = null, prevCell = 0, tearTimer = 0;
+  let buffer = null, prevCell = 0;
 
   function set(patch) {
     Object.assign(S, patch);
@@ -67,9 +67,9 @@ const App = (() => {
     openTab(t) {
       set(S.catOpen && S.tab === t ? { catOpen: false } : { catOpen: true, tab: t });
     },
-    toggleMat(i) { set({ mat: toggle(S.mat, i) }); refresh(true); },
-    toggleDep(i) { set({ dep: toggle(S.dep, i) }); refresh(true); },
-    toggleMono() { set({ monoOnly: !S.monoOnly }); refresh(true); },
+    toggleMat(i) { if (!S.tearing) { set({ mat: toggle(S.mat, i) }); refresh(true); } },
+    toggleDep(i) { if (!S.tearing) { set({ dep: toggle(S.dep, i) }); refresh(true); } },
+    toggleMono() { if (!S.tearing) { set({ monoOnly: !S.monoOnly }); refresh(true); } },
     setLattice(lat, angle) {
       set({ wheelAngle: angle });
       if (lat === S.lattice) return;
@@ -85,14 +85,15 @@ const App = (() => {
         Grid.zoomTo(prevCell || 40);
       }
     },
-    tear() {
-      if (!(S.mat.length || S.dep.length || S.monoOnly) || tearTimer) return;
+    async tear() {
+      if (!(S.mat.length || S.dep.length || S.monoOnly) || S.tearing) return;
       set({ tearing: true });
-      tearTimer = setTimeout(() => {
-        tearTimer = 0;
+      try {
+        await UI.tearReceipt();
+      } finally {
         set({ mat: [], dep: [], monoOnly: false, tearing: false });
         refresh(true);
-      }, 470);
+      }
     },
     step(d) {
       const k = S.detailK + d;

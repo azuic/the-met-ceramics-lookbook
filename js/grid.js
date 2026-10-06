@@ -151,6 +151,7 @@ const Grid = (() => {
     const frac = G.totalH > 1 ? (G.scroll + G.H / 2) / G.totalH : 0;
     const map = (animate && !G.reducedMotion) ? captureVisible() : null;
     G.index = next;
+    lastStart = lastSpan = -1;
     const g = geom();
     G.totalH = Math.max(1, Math.ceil(next.length / g.cols) * g.rowH);
     G.scroll = frac > 0 ? Math.max(0, frac * G.totalH - G.H / 2) : 0;
@@ -203,7 +204,13 @@ const Grid = (() => {
     ctx.fillStyle = '#F3F1EC';
     ctx.fillRect(0, 0, W, H);
     const idx = G.index;
-    if (!idx.length) return;
+    if (!idx.length) {
+      if (lastStart !== 0 || lastSpan !== 1) {
+        lastStart = 0; lastSpan = 1;
+        emit('scroll', { start: 0, span: 1 });
+      }
+      return;
+    }
 
     const g = geom();
     const totalRows = Math.ceil(idx.length / g.cols);
@@ -223,16 +230,10 @@ const Grid = (() => {
     const ease = 1 - Math.pow(1 - at, 3);
     const colors = Data.state.colors;
 
-    // Below the overview threshold a 96px crop is a rounding error, and
-    // loading sheets to draw it would be absurd — the whole collection on one
-    // screen is a colour reading by definition.
-    const tiles = G.cell > OVERVIEW_CELL && Atlas.state.ready;
-    // The atlas sizes its cache to what this frame actually asks for, so the
-    // pass has to be bracketed. Cells record their want through Atlas.tile()
-    // as they draw, which is why there is no separate counting pass. In
-    // overview the brackets are skipped entirely, which leaves whatever is
-    // resident alone and makes zooming back in instant.
-    if (tiles) Atlas.beginFrame();
+    const tiles = Atlas.state.ready;
+    // Switch requests as soon as the user targets a small view. This avoids
+    // downloading big sheets for the intermediate frames on the way out.
+    if (tiles) Atlas.beginFrame(Math.min(G.cell, G.cellT) <= 24);
 
     let hx = -1, hy = -1;
     const hk = G.hoverK;
@@ -258,9 +259,8 @@ const Grid = (() => {
 
     // What the ring reports is the slice of the collection on screen, not a
     // position: at 40px cells a viewport holds a real fraction of the sweep.
-    const span = Math.min(1, H / G.totalH);
-    const start = Math.min(1 - span, G.scroll / G.totalH);
-    if (Math.abs(start - lastStart) > 0.002 || Math.abs(span - lastSpan) > 0.002) {
+    const { start, span } = visibleRange();
+    if (Math.abs(start - lastStart) > 0.0001 || Math.abs(span - lastSpan) > 0.0001) {
       lastStart = start;
       lastSpan = span;
       emit('scroll', { start, span });
@@ -300,7 +300,7 @@ const Grid = (() => {
     }, { passive: false });
 
     window.addEventListener('mousemove', (e) => {
-      if (e.target !== cv) {
+      if (e.target !== cv || G.cell <= OVERVIEW_CELL) {
         if (G.hoverK !== -1) { G.hoverK = -1; G.dirty = true; }
         return;
       }
@@ -317,8 +317,24 @@ const Grid = (() => {
     raf = requestAnimationFrame(tick);
   }
 
+  function visibleRange() {
+    const count = G.index?.length || 0;
+    if (!count) return { start: 0, span: 1 };
+    const g = geom();
+    const maxScroll = Math.max(0, Math.ceil(count / g.cols) * g.rowH - G.H);
+    const scroll = Math.max(0, Math.min(G.scroll, maxScroll));
+    const objectsPerPixel = g.cols / g.rowH;
+    const start = scroll * objectsPerPixel / count;
+    return { start, span: Math.min(1 - start, G.H * objectsPerPixel / count) };
+  }
+
   function scrollToFraction(f) {
-    G.scroll = f * Math.max(0, G.totalH - G.H);
+    const g = geom(), count = G.index?.length || 0;
+    const maxScroll = Math.max(0, Math.ceil(count / g.cols) * g.rowH - G.H);
+    // An angle addresses an object position, not a fraction of the scrollbar
+    // travel. Centre that colour in the viewport, clamping at either end.
+    const target = Math.max(0, Math.min(1, f)) * count / g.cols * g.rowH - G.H / 2;
+    G.scroll = Math.max(0, Math.min(maxScroll, target));
     G.dirty = true;
   }
 
@@ -329,7 +345,7 @@ const Grid = (() => {
 
   return {
     state: G, init, setIndex, setLattice, zoomTo, fitCell,
-    scrollToFraction, page, geom, hitTest,
+    scrollToFraction, visibleRange, page, geom, hitTest,
     MAX_CELL, OVERVIEW_CELL,
   };
 })();

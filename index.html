@@ -51,12 +51,10 @@
          it is the palette, and doubles as the scrollbar. -->
     <div data-mod="1" id="wheelWrap">
       <div id="ringBase"></div>
-      <div id="glazeRing"></div>
-      <!-- The indicator is an arc, not a dot: a viewport covers a range of the
-           collection, and at this zoom that range is a visible slice of it. -->
-      <svg id="ringArc" viewBox="0 0 200 200" aria-hidden="true">
-        <circle id="ringArcPath" cx="100" cy="100" r="87" transform="rotate(-90 100 100)"></circle>
-      </svg>
+      <!-- Only the colour band fades outside the visible range. -->
+      <div id="paletteRange">
+        <div id="glazeRing"></div>
+      </div>
       <div id="wheelHit" style="position:absolute;left:26px;top:26px;width:148px;height:148px;touch-action:none">
         <div id="wheelRing">
           <div id="glyphs"></div>
@@ -69,6 +67,7 @@
     </div>
 
     <div data-mod="1" id="receipt">
+      <div id="receiptPaper">
       <div style="padding:12px 14px 10px;border-bottom:1px dashed #BAB6AC;display:flex;justify-content:space-between">
         <span style="font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:#262623">Field receipt</span>
         <span id="receiptDate" style="font-size:8px;letter-spacing:0.12em;color:#928F86"></span>
@@ -79,15 +78,22 @@
         <span style="font-size:8px;letter-spacing:0.14em;text-transform:uppercase;color:#928F86">objects</span>
       </div>
       <div id="receiptFoot" style="padding:0 14px 12px;font-size:7.5px;letter-spacing:0.12em;text-transform:uppercase;color:#BAB6AC"></div>
-      <div id="stub" hidden>&#9986; Tear here to reset</div>
+      </div>
+      <span id="receiptStatus" class="sr-only" role="status">No filters applied</span>
+      <div id="stubSlot">
+        <button id="stub" class="paperTear" type="button" aria-label="Reset all filters" title="Pull left to tear, or click to reset" hidden>
+          <span class="stubLabel" aria-hidden="true">Pull to reset <span class="tearArrow">←</span></span>
+          <canvas id="tearPaper" class="tearPaper" aria-hidden="true"></canvas>
+        </button>
+      </div>
     </div>
 
     <div data-mod="1" style="pointer-events:auto;position:fixed;z-index:10;left:50%;bottom:32px;transform:translateX(-50%);display:flex;align-items:center;gap:16px">
-      <div id="seeAll" style="padding:10px 20px;background:#FAF8F3;border:1px solid #262623;box-shadow:0 8px 22px rgba(38,38,35,0.14);font-size:9px;letter-spacing:0.24em;text-transform:uppercase;color:#262623"></div>
+      <div id="seeAll" style="padding:10px 20px;background:#FAF8F3;border:1px solid #D8D4CB;box-shadow:var(--paper-shadow);font-size:9px;letter-spacing:0.24em;text-transform:uppercase;color:#262623"></div>
       <div class="hint">Ctrl / &#8984; + scroll to zoom</div>
     </div>
 
-    <div id="empty" hidden style="pointer-events:auto;position:fixed;z-index:9;left:50%;top:50%;transform:translate(-50%,-50%);background:#FAF8F3;border:1px solid #D8D4CB;box-shadow:0 14px 40px rgba(38,38,35,0.16);padding:28px 32px;text-align:center;max-width:320px">
+    <div id="empty" hidden style="pointer-events:auto;position:fixed;z-index:9;left:50%;top:50%;transform:translate(-50%,-50%);background:#FAF8F3;border:1px solid #D8D4CB;box-shadow:var(--paper-shadow);padding:28px 32px;text-align:center;max-width:320px">
       <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#928F86;margin-bottom:12px">No objects</div>
       <div style="font-family:'Libre Baskerville',serif;font-size:15px;line-height:1.6;color:#262623">The museum holds nothing catalogued this way.</div>
       <div id="emptyReset" style="margin-top:16px;font-size:8px;letter-spacing:0.2em;text-transform:uppercase;color:#C05A38">&#9986; Tear the receipt to reset</div>
@@ -95,16 +101,16 @@
   </div>
 
   <div id="detail" hidden>
-    <div id="detailClose" class="key" style="position:fixed;top:26px;right:34px;z-index:5">esc</div>
-    <div id="detailPrev" class="key key--nav" style="position:fixed;left:28px;top:50%;transform:translateY(-50%);z-index:5">&#8592;</div>
-    <div id="detailNext" class="key key--nav" style="position:fixed;right:28px;top:50%;transform:translateY(-50%);z-index:5">&#8594;</div>
+    <button type="button" id="detailClose" class="key" aria-label="Close detail" style="position:fixed;top:26px;right:28px;z-index:5">esc</button>
+    <button type="button" id="detailPrev" class="key key--nav" aria-label="Previous object" style="position:fixed;left:28px;top:50%;transform:translateY(-50%);z-index:5">&#8592;</button>
+    <button type="button" id="detailNext" class="key key--nav" aria-label="Next object" style="position:fixed;right:28px;top:50%;transform:translateY(-50%);z-index:5">&#8594;</button>
     <div id="detailHint">
       <span class="key key--mini">&#8592;</span><span class="key key--mini">&#8594;</span>
       <span>to browse</span>
       <span class="key key--mini">esc</span>
       <span>to close</span>
     </div>
-    <div id="detailBody" style="min-height:100%;display:flex;align-items:center;justify-content:center;align-content:center;padding:56px 80px;box-sizing:border-box;gap:60px 64px;flex-wrap:wrap"></div>
+    <div id="detailBody" style="min-height:100%;display:flex;align-items:center;justify-content:center;align-content:center;padding:56px 80px;box-sizing:border-box;gap:24px 64px;flex-wrap:wrap"></div>
   </div>
 
   <div id="boot">
@@ -117,6 +123,9 @@
 <script src="js/data.js"></script>
 <script src="js/atlas.js"></script>
 <script src="js/grid.js"></script>
+<script src="js/palette.js"></script>
+<script src="js/receipt.js"></script>
+<script src="js/paper-tear.js"></script>
 <script src="js/detail.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/app.js"></script>

@@ -1,4 +1,4 @@
-# The site is index.html, css/, js/, data/ and cursor.png. Everything else in
+# The site is index.html, css/, js/, data/ and cursor.svg. Everything else in
 # the repo is how the site got made, not part of what it serves.
 
 pipeline/
@@ -6,6 +6,7 @@ legacy/
 .github/
 .idea/
 .claude/
+tests/
 
 PLAN.md
 DESIGN_BRIEF.md

@@ -11,7 +11,10 @@ const UI = (() => {
     'Nine departments carry 98% — eight small ones share the last row',
   ];
 
-  let S, act, n = {};
+  let S, act, receiptTear, n = {};
+  let cursorObject = -1, cursorFamily = -1, cursorColour = '';
+  const cursorImages = new Map();
+  let paletteIndex = null;
 
   function q(id) { return document.getElementById(id); }
 
@@ -25,10 +28,10 @@ const UI = (() => {
       tabMat: q('tabMat'), tabDep: q('tabDep'), tabNote: q('tabNote'),
       monoBtn: q('monoBtn'), monoCount: q('monoCount'),
       wheelWrap: q('wheelWrap'), glazeRing: q('glazeRing'),
-      ringBase: q('ringBase'), ringArc: q('ringArcPath'),
+      ringBase: q('ringBase'), paletteRange: q('paletteRange'),
       wheelHit: q('wheelHit'), wheelRing: q('wheelRing'), glyphs: q('glyphs'),
       receipt: q('receipt'), receiptDate: q('receiptDate'), receiptLines: q('receiptLines'),
-      receiptFoot: q('receiptFoot'), countText: q('countText'), stub: q('stub'),
+      receiptFoot: q('receiptFoot'), countText: q('countText'), stub: q('stub'), receiptStatus: q('receiptStatus'),
       seeAll: q('seeAll'), empty: q('empty'), emptyReset: q('emptyReset'),
     };
 
@@ -41,16 +44,13 @@ const UI = (() => {
       day: '2-digit', month: 'short', year: 'numeric',
     }).toUpperCase();
 
-    // The palette ring: the ten glaze families, in order, as one sweep.
-    const hexes = meta.families.map(f => f.hex);
-    n.glazeRing.style.background =
-      'conic-gradient(from 0deg,' + hexes.join(',') + ',' + hexes[0] + ')';
-
     n.sortHead.addEventListener('click', () => act.set({ sortOpen: !S.sortOpen }));
     n.tabMat.addEventListener('click', () => act.openTab(0));
     n.tabDep.addEventListener('click', () => act.openTab(1));
     n.monoBtn.addEventListener('click', act.toggleMono);
-    n.stub.addEventListener('click', act.tear);
+    receiptTear = PaperTear.attach(n.stub, {
+      text: 'PULL TO RESET', onCommit: () => act.tear(), canStart: () => !S.tearing,
+    });
     n.emptyReset.addEventListener('click', act.tear);
     n.seeAll.addEventListener('click', act.seeAll);
     n.ringBase.addEventListener('pointerdown', ringScrub);
@@ -60,6 +60,46 @@ const UI = (() => {
     buildGlyphs();
     scale();
     window.addEventListener('resize', scale);
+  }
+
+  const tearReceipt = () => receiptTear.tear();
+
+  function updateCursor() {
+    const D = Data.state, G = Grid.state;
+    let family = -1;
+    if (cursorObject >= 0) {
+      if (!D.mono[cursorObject]) family = D.fam[cursorObject];
+    } else if (!S.monoOnly && G.index?.length) {
+      // Sample the visible field, so filtering and other sort orders still
+      // follow the ceramics on screen. Keep the previous family on ties.
+      const counts = new Array(D.meta.families.length).fill(0);
+      for (const y of [.2, .5, .8]) {
+        for (const x of [.2, .5, .8]) {
+          const k = Grid.hitTest(G.W * x, G.H * y);
+          if (k >= 0) counts[D.fam[G.index[k]]]++;
+        }
+      }
+      family = counts[cursorFamily] > 0 ? cursorFamily : D.fam[G.index[0]];
+      counts.forEach((count, i) => { if (count > counts[family]) family = i; });
+    }
+    cursorFamily = family;
+    const colour = family >= 0 ? D.meta.families[family].hex : '#6E6C64';
+    if (colour === cursorColour) return;
+    cursorColour = colour;
+    if (!cursorImages.has(colour)) {
+      // Native cursor assets are cached per family; no pointer-following DOM
+      // or image requests are needed as the collection scrolls.
+      const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28">' +
+        '<path d="M4 3L24 14L4 25Z" fill="' + colour + '" stroke="#FAF8F3" stroke-width="4" stroke-linejoin="round"/>' +
+        '<path d="M4 3L24 14L4 25Z" fill="' + colour + '" stroke="#262623" stroke-width="1.5" stroke-linejoin="round"/></svg>';
+      cursorImages.set(colour, 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '") 24 14');
+    }
+    document.documentElement.style.setProperty('--palette-cursor', cursorImages.get(colour));
+  }
+
+  function setCursorObject(i) {
+    cursorObject = i;
+    updateCursor();
   }
 
   /* One transform keeps the modules proportional on short viewports. Children
@@ -174,10 +214,15 @@ const UI = (() => {
     ]);
   }
 
-  let builtTab = -1, builtSel = '';
+  let builtTab = -1, builtSel = '', builtReceipt = '';
 
   function update() {
     const meta = Data.state.meta;
+    updateCursor();
+    if (Grid.state.index !== paletteIndex) {
+      paletteIndex = Grid.state.index;
+      n.glazeRing.style.background = PaletteRing.gradient(paletteIndex, Data.state.rgb);
+    }
 
     n.sortCurrent.textContent = SORTS[S.sort].toLowerCase();
     n.sortBody.hidden = !S.sortOpen;
@@ -217,15 +262,17 @@ const UI = (() => {
       const shape = g.firstChild;
       shape.style.cssText = shape.dataset.css + (S.lattice === i ? '#262623' : '#BAB6AC');
     });
-    // The arc runs along the inside of the glaze band, from where the viewport
-    // starts to where it ends. A floor keeps it visible when the collection is
-    // long enough that the true slice would be a couple of pixels.
-    const C = 2 * Math.PI * 87;
-    // The floor is what makes it read as an arc rather than a straight nub:
-    // 6% subtends about 22 degrees, enough for the curve to be visible.
-    const len = Math.max(0.06, Math.min(1, S.scrollSpan)) * C;
-    n.ringArc.style.strokeDasharray = len.toFixed(2) + ' ' + (C - len).toFixed(2);
-    n.ringArc.style.strokeDashoffset = (-S.scrollStart * C).toFixed(2);
+    // Highlight the actual visible slice, without widening it into colours
+    // outside the viewport. The paper underneath stays fully opaque.
+    const span = Math.max(0, Math.min(1, S.scrollSpan));
+    const start = Math.max(0, Math.min(S.scrollStart, 1 - span));
+    const end = span * 360;
+    const feather = Math.min(3, end / 2, (360 - end) / 2);
+    n.paletteRange.style.setProperty('--range-opacity',
+      'conic-gradient(from ' + (start * 360).toFixed(2) + 'deg,' +
+      '#000 0deg ' + end.toFixed(2) + 'deg,' +
+      'rgba(0,0,0,.2) ' + (end + feather).toFixed(2) + 'deg ' +
+      (360 - feather).toFixed(2) + 'deg,#000 360deg)');
     n.wheelWrap.classList.toggle('faded', S.overview);
 
     const lines = [
@@ -233,19 +280,26 @@ const UI = (() => {
       ['Dept', S.dep.length ? S.dep.map(i => meta.departments[i].short).join(' + ') : 'all 17'],
     ];
     if (S.monoOnly) lines.push(['Showing', 'never photographed in colour']);
-    fill(n.receiptLines, lines.map(([k, v]) => el('div', { class: 'line' }, [
-      el('span', { class: 'k', text: k }),
-      el('span', { class: 'v', text: v }),
-    ])));
+    const receiptKey = JSON.stringify(lines);
+    if (receiptKey !== builtReceipt) {
+      builtReceipt = receiptKey;
+      fill(n.receiptLines, lines.map(([k, v]) => el('div', { class: 'line' }, [
+        el('span', { class: 'k', text: k }),
+        el('span', { class: 'v', text: v }),
+      ])));
+    }
     n.countText.textContent = S.count.toLocaleString();
 
     const hasFilters = S.mat.length > 0 || S.dep.length > 0 || S.monoOnly;
     n.stub.hidden = !hasFilters;
+    n.stub.setAttribute('aria-disabled', String(S.tearing));
     n.stub.classList.toggle('tearing', S.tearing);
+    const status = S.tearing ? '' : (hasFilters ? 'Filtered collection' : 'No filters applied');
+    if (n.receiptStatus.textContent !== status) n.receiptStatus.textContent = status;
 
     n.seeAll.textContent = S.overview ? 'Return to the shelf' : 'See everything';
     n.empty.hidden = S.count !== 0;
   }
 
-  return { init, update };
+  return { init, update, tearReceipt, setCursorObject };
 })();

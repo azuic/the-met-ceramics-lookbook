@@ -1,0 +1,20 @@
+<!doctype html><meta charset="utf-8"><title>Receipt paper motion study</title>
+<style>
+body { background:#efece5; margin:20px; color:#44413a; font:12px monospace }
+main { display:grid; grid-template-columns:repeat(2, 560px); gap:12px }
+section { height:210px; background:repeating-conic-gradient(#bbb6a6 0 25%, #d1ccbf 0 50%) 0 / 20px 20px; position:relative; overflow:hidden }
+h2 { font-size:11px; margin:12px; }
+.paper {position:absolute;left:288px;top:45px;width:240px;height:45px;background:#faf8f3;border-bottom:1px solid #ddd6c9;box-shadow:0 6px 12px #0002}
+canvas {position:absolute;left:0;top:50px;width:560px;height:180px;filter:drop-shadow(0 7px 5px #0003)}
+</style><main></main>
+<script src="../js/receipt.js"></script>
+<script>
+for (const [name,p,d] of [['Attached',0,0],['Starting end rolls inward',.2,0],['Last fibres hold',.965,0],['Final connection',1,0],['Edge curls free',1,.18],['Short release',1,.55]]) {
+ const section=document.createElement('section');
+ const title=document.createElement('h2');title.textContent=name;
+ const paper=document.createElement('div');paper.className='paper';
+ const canvas=document.createElement('canvas');
+ section.append(title,paper,canvas);document.querySelector('main').append(section);
+ ReceiptPaper.init(canvas);ReceiptPaper.draw(p,d);
+}
+</script>

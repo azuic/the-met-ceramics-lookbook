@@ -1,0 +1,27 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Receipt label continuity</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/lookbook.css">
+<style>
+body { padding:24px; font-size:12px }
+main { width:288px }
+h2 { margin:16px 0 8px; font:11px monospace }
+#stub { position:relative; inset:auto; width:240px; height:36px }
+.sample { width:240px; height:36px; position:relative; border-top:1px solid transparent; box-sizing:border-box; font:8px 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing:.2em }
+#tearPaper { display:block }
+</style>
+<main>
+<h2>Before pulling</h2>
+<button id="stub"><span class="stubLabel">Pull to reset <span class="tearArrow">←</span></span></button>
+<h2>Start of pull</h2>
+<div class="sample"><canvas id="tearPaper"></canvas></div>
+</main>
+<script src="../js/receipt.js"></script>
+<script>
+document.fonts.ready.then(() => {
+  const canvas=document.querySelector('canvas');
+  ReceiptPaper.init(canvas, document.querySelector('.stubLabel'));
+  ReceiptPaper.draw(0);
+});
+</script>

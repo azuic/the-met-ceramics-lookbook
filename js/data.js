@@ -102,15 +102,23 @@ const Data = (() => {
     return idx;
   }
 
+  /* Where the museum keeps the full record. The id is in grid.bin, so this
+   * answers from memory and never waits on -- or fails with -- a shard. */
+  const objectUrl = (i) => 'https://www.metmuseum.org/art/collection/search/' + S.id[i];
+
   /* Catalogue text for one object, by its index in the base order. */
   async function detail(i) {
     const size = S.meta.shard;
     const n = Math.floor(i / size);
     if (!S.shards.has(n)) {
       const name = String(n).padStart(3, '0');
+      // A shard that fails is dropped rather than remembered: caching the
+      // failure would cost this block of 1024 records for the rest of the
+      // session, and a truncated response is exactly the kind of thing that
+      // happens once and then does not.
       S.shards.set(n, fetch('data/detail/' + name + '.json')
-        .then(r => (r.ok ? r.json() : null))
-        .catch(() => null));
+        .then(r => (r.ok ? r.json() : Promise.reject(new Error(name + ' ' + r.status))))
+        .catch(() => { S.shards.delete(n); return null; }));
     }
     const rows = await S.shards.get(n);
     const row = rows && rows[i % size];
@@ -119,9 +127,8 @@ const Data = (() => {
     return {
       title, medium, date, culture, country, objectName,
       image: !image ? '' : (image[0] === '!' ? image.slice(1) : S.meta.imagePrefix + image),
-      url: 'https://www.metmuseum.org/art/collection/search/' + S.id[i],
     };
   }
 
-  return { state: S, load, order, detail };
+  return { state: S, load, order, detail, objectUrl };
 })();
